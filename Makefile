@@ -13,3 +13,7 @@ lint:
 lint-strict:
 	flake8 .
 	mypy . --strict
+
+clean:
+	rm -rf src/__pycache*
+	rm -rf src/llm*/__pyca*

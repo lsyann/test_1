@@ -1,5 +1,6 @@
 from .llm_sdk import Small_LLM_Model
 import json
+import os
 from .config import config
 
 
@@ -48,6 +49,9 @@ def get_int(llm: Small_LLM_Model, tokens: list[int], lst: list[int]) -> None:
         next_id = logits.index(max(logits))
 
         if "," in llm.decode([next_id]):
+            temp = llm.encode(".0")
+            for elem in temp:
+                lst.append(elem)
             return None
 
         if first:
@@ -174,19 +178,6 @@ def main(text: str) -> str:
     output: str = llm.decode(lst)
     output += "}}"
 
-    with open(output_file, "r") as f:
-        file = ""
-        for line in f:
-            file += line
-    if file == "":
-        output = f"[{output}]"
-        ls = json.loads(output)
-    else:
-        ls = json.loads(file)
-        ls.append(json.loads(output))
-    with open(output_file, "w") as f:
-        json.dump(ls, f)
-
     return output
 
 
@@ -202,8 +193,23 @@ try:
     with open(input_file, "r") as f:
         prompts = json.load(f)
 
+    answer = []
+
     for elem in prompts:
-        print(main(elem["prompt"]), "\n")
+        answer.append(main(elem["prompt"]))
+        print(answer[-1])
+    
+    final = "["
+    for i in range(len(answer)):
+        final += answer[i]
+        if i < len(answer) - 1:
+            final += ","
+    final += "]"
+
+    ls = json.loads(final)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    with open(output_file, "w") as f:
+        json.dump(ls, f)
 
 except Exception as err:
     print("error message: ", err)
