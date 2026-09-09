@@ -1,7 +1,7 @@
 from .llm_sdk import Small_LLM_Model
 import json
 import os
-from .config import config
+from .config import config, Answer, Functions
 
 
 def get_str(llm: Small_LLM_Model, tokens: list[int], lst: list[int]) -> None:
@@ -193,6 +193,12 @@ try:
     with open(input_file, "r") as f:
         prompts = json.load(f)
 
+    with open(definition_file, "r") as f:
+        definitions = json.load(f)
+
+    for elem in definitions:
+        Functions(name=elem["name"], description=elem["description"], parameters=elem["parameters"], returns=elem["returns"])
+    
     answer = []
 
     for elem in prompts:
@@ -207,6 +213,8 @@ try:
     final += "]"
 
     ls = json.loads(final)
+    for elem in ls:
+        Answer(prompt=elem["prompt"], name=elem["name"], params=elem["parameters"])
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(ls, f)

@@ -1,4 +1,28 @@
 import sys
+from pydantic import BaseModel, model_validator
+from typing import Any
+
+
+class Functions(BaseModel):
+    name: str
+    description: str
+    parameters: dict[Any, Any]
+    returns: dict[Any, Any]
+
+    @model_validator(mode='after')
+    def validate_functions(self):
+        if self.returns["type"] not in ("string", "number"):
+            raise Exception(f"Invalid return type: {self.returns["type"]}")
+        for key in self.parameters.keys():
+            if self.parameters[key]["type"] not in ("string", "number"):
+                raise Exception(f"Invalid parameter type: {self.parameters[key]["type"]}")
+        return self
+
+
+class Answer(BaseModel):
+    prompt: str
+    name: str
+    params: dict[Any, Any]
 
 
 def config() -> dict[str, str]:
