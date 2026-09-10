@@ -1,6 +1,6 @@
 import sys
 from pydantic import BaseModel, model_validator
-from typing import Any
+from typing import Any, Self
 
 
 class Functions(BaseModel):
@@ -10,7 +10,7 @@ class Functions(BaseModel):
     returns: dict[Any, Any]
 
     @model_validator(mode='after')
-    def validate_functions(self):
+    def validate_functions(self) -> Self:
         if self.returns["type"] not in ("string", "number"):
             raise Exception(f"Invalid return type: {self.returns["type"]}")
         for key in self.parameters.keys():
