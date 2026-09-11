@@ -23,9 +23,6 @@ ignore_missing_imports = true
 allow_subclassing_any = true
 disallow_untyped_decorators = false
 warn_return_any = false
-plugins = [
-    "pydantic.mypy"
-]
 
 # Force mypy to treat missing imports as Any without raising subclassing/decorator errors
 [[tool.mypy.overrides]]
