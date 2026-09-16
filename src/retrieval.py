@@ -42,7 +42,7 @@ def _get_score(word: str, scores: list[int], data: list[dict]) -> int:
         scores[i] += _TF(word, data_text[i], avg_len) * IDF
 
 
-def get_scores(prompt: str, k: int) -> list[int]:
+def get_scores(prompt: str, k: int) -> list[dict]:
     try:
         with open("data/processed", "r") as f:
             data = json.load(f)
@@ -58,12 +58,15 @@ def get_scores(prompt: str, k: int) -> list[int]:
         scores.append(0)
     for word in prompt.split():
         _get_score(word, scores, data)
+    top_results = []
     for i in range(k):
-        print(data[scores.index(max(scores))]["path"], end='')
+        """print(data[scores.index(max(scores))]["path"], end='')
         print(f" [{data[scores.index(max(scores))]["start"]}:", end='')
-        print(f"{data[scores.index(max(scores))]["end"]}]")
+        print(f"{data[scores.index(max(scores))]["end"]}]")"""
+        top_results.append(data[scores.index(max(scores))])
         data.pop(scores.index(max(scores)))
         scores.pop(scores.index(max(scores)))
+    return top_results
 
 
 if __name__ == "__main__":

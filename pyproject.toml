@@ -9,4 +9,5 @@ dependencies = [
     "huggingface-hub",
     "accelerate",
     "pydantic",
+    "fire"
 ]
