@@ -1,12 +1,13 @@
 import os
 import json
+from pydantic import BaseModel
+#from __init__ import MinimalSource
 
 
-class Chunk:
-    def __init__(self, path: str, start: int, end: int):
-        self.path = path
-        self.start = start
-        self.end = end
+class MinimalSource(BaseModel):
+    file_path: str
+    first_character_index: int
+    last_character_index: int
 
 
 def _divider(temp: int, index: int, max_length: int) -> int:
@@ -47,7 +48,7 @@ def _chunk_code(file: str, index: int, max_length: int) -> int:
     return _divider(temp, index, max_length)
 
 
-def _get_chunks(path: str, max_length: int, is_code: bool) -> list[Chunk]:
+def _get_chunks(path: str, max_length: int, is_code: bool) -> list[MinimalSource]:
     file = ""
     with open(path, "r") as f:
         for line in f:
@@ -58,36 +59,35 @@ def _get_chunks(path: str, max_length: int, is_code: bool) -> list[Chunk]:
     chunk_list = []
     while index < file_len:
         chunk_end_index = chunk_method(file, index, max_length)
-        chunk_list.append(Chunk(path, index, chunk_end_index))
+        chunk_list.append(MinimalSource(file_path=path, first_character_index=index, last_character_index=chunk_end_index))
         index = chunk_end_index + 1
     return chunk_list
 
 
-def _chunk_files(path: str, max_length: int) -> list[list[Chunk]]:
+def _chunk_files(path: str, max_length: int) -> list[list[MinimalSource]]:
     files = os.listdir(path)
     lst = []
     for file in files:
-        if "." not in file:
-            try:
-                temp = _chunk_files(path + "/" + file, max_length)
-            except Exception as err:
-                ...
+        try:
+            temp = _chunk_files(path + "/" + file, max_length)
             if temp:
                 for elem in temp:
                     lst.append(elem)
-        elif file.endswith(".md"):
+        except Exception as err:
+            ...
+        if file.endswith(".md") or file.endswith(".txt"):
             lst.append(_get_chunks(path + "/" + file, max_length, False))
         elif file.endswith(".py"):
             lst.append(_get_chunks(path + "/" + file, max_length, True))
     return lst
 
 
-def write_chunks():
-    chunked_files = _chunk_files(os.getcwd() + "/vllm-0.10.1", 2000)
+def write_chunks(max_chunk_size: int):
+    chunked_files = _chunk_files("data/raw", max_chunk_size)
     lst = []
     for file in chunked_files:
         for chunk in file:
-            lst.append({"path": chunk.path, "start": chunk.start, "end": chunk.end})
+            lst.append({"path": chunk.file_path, "start": chunk.first_character_index, "end": chunk.last_character_index})
     
     os.makedirs(os.path.dirname("data/processed"), exist_ok=True)
     with open("data/processed", "w") as f:
@@ -95,4 +95,4 @@ def write_chunks():
 
 
 if __name__ == "__main__":
-    write_chunks()
+    write_chunks(2000)

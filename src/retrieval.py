@@ -43,7 +43,7 @@ def _get_score(word: str, scores: list[int], data: list[Chunk]) -> int:
         scores[i] += _TF(word, data_text[i], avg_len) * IDF
 
 
-def placeholder(prompt: str) -> list[int]:
+def get_scores(prompt: str, k: int) -> list[int]:
     try:
         with open("data/processed", "r") as f:
             data = json.load(f)
@@ -59,10 +59,12 @@ def placeholder(prompt: str) -> list[int]:
         scores.append(0)
     for word in prompt.split():
         _get_score(word, scores, data)
-    #return scores
-    print(data[scores.index(max(scores))]["path"])
-    print(data[scores.index(max(scores))]["start"])
-    print(data[scores.index(max(scores))]["end"])
+    for i in range(k):
+        print(data[scores.index(max(scores))]["path"], end='')
+        print(f" [{data[scores.index(max(scores))]["start"]}:", end='')
+        print(f"{data[scores.index(max(scores))]["end"]}]")
+        data.pop(scores.index(max(scores)))
+        scores.pop(scores.index(max(scores)))
 
 
 if __name__ == "__main__":
