@@ -1,0 +1,12 @@
+[project]
+name = "rag"
+version = "0.1.0"
+description = "rag"
+requires-python = ">=3.10"
+dependencies = [
+    "torch",
+    "transformers",
+    "huggingface-hub",
+    "accelerate",
+    "pydantic",
+]

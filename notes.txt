@@ -1,5 +1,0 @@
-#pour le chunking, je pense faire par phrase pour les .md et taille fixe + recouvrement pour le code
-
-
-#sources:
-https://blog.stephane-robert.info/docs/developper/programmation/python/rag-chunking/

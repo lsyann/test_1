@@ -1,1 +1,1 @@
-from Chunk import *
+from chunker import Chunk, write_chunks
