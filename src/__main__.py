@@ -23,6 +23,9 @@ def search_dataset(dataset_path: str, k: int, save_directory: str):
         q["question"] == "llm"
         temp = [MinimalSource(file_path=elem["path"], first_character_index=elem["start"], last_character_index=elem["end"]) for elem in get_scores(q["question"], k)]
         lst.append(MinimalSearchResults(question_id=q["question_id"], question=q["question"], retrieved_sources=temp))
+    new = []
+    for elem in temp:
+        new.append(elem.model_dump())
     with open(save_directory, "w") as f:
         json.dump(new, f)
 
