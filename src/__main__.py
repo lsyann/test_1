@@ -11,7 +11,7 @@ def search(prompt: str, k: int) -> None:
 
 
 def search_dataset(dataset_path: str, k: int, save_directory: str):
-    
+    ...
 
 
 if __name__ == "__main__":

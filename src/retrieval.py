@@ -1,9 +1,8 @@
 import json
 import math
-from __init__ import Chunk
 
 
-def get_text(doc: Chunk) -> str:
+def get_text(doc: dict) -> str:
     file = ""
     with open(doc["path"], "r") as f:
         for line in f:
@@ -24,7 +23,7 @@ def _TF(word: str, file: str, avg_len: int) -> int:
     return freq / (freq + 1.2 * (1 - 0.75 + 0.75 * (nb_word / avg_len)))
 
 
-def _get_score(word: str, scores: list[int], data: list[Chunk]) -> int:
+def _get_score(word: str, scores: list[int], data: list[dict]) -> int:
     avg_len = 0
     nb_docs = len(data)
     for doc in data:
