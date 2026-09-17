@@ -56,7 +56,7 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
     sources = ""
     for result in results:
         for source in result["retrieved_sources"]:
-            sources += "\n" + get_text({"path": source["file_path"], "start": source["first_character_index"], "end": source["last_character_index"]}) + "\n"
+            sources += "\n" + get_text(source) + "\n"
         search_results.search_results.append(MinimalAnswer(question_id=result["question_id"], question=result["question"], retrieved_sources=result["retrieved_sources"], answer=get_answer(llm, result["question"], 0, sources)))
     new = search_results.model_dump()
     if not save_directory.endswith("/"):
