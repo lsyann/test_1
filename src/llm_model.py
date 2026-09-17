@@ -2,7 +2,7 @@ from typing import Tuple
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer, PreTrainedModel, logging
 from huggingface_hub import hf_hub_download
-from .retrieval import get_scores
+from .retrieval import get_scores, get_text
 
 
 class Small_LLM_Model:
@@ -70,19 +70,19 @@ class Small_LLM_Model:
         logits = out.logits[0, -1].tolist()
         return [float(x) for x in logits]
 
-def get_answer(llm: Small_LLM_Model, prompt: str, k: int, sources: str = "") -> str:
-    sources = get_scores(prompt, k)
-    llm = Small_LLM_Model()
+def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "") -> str:
+    if not new_sources:
+        sources = get_scores(prompt, k)
 
     context = '"""use the following context to answer the question:\n'
-    if not sources:
+    if not new_sources:
         for source in sources:
             context += "\n" + get_text(source) + "\n\n"
     else:
-        context += "\n" + sources + "\n\n"
+        context += "\n" + new_sources + "\n\n"
     context += '"""\n\nQuestion: ' + prompt + "\n\nAnswer: "
 
-    tokens = llm.encode(context + "\n" + prompt)
+    tokens = llm.encode(context)
     answer = []
     max_tokens = 0
     while True:
@@ -93,4 +93,5 @@ def get_answer(llm: Small_LLM_Model, prompt: str, k: int, sources: str = "") -> 
         max_tokens += 1
         if '.' in llm.decode([index]) or max_tokens > 100:
             break
-    return llm.decode(answer)
+    temp = llm.decode(answer)
+    return temp

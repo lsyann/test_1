@@ -39,6 +39,7 @@ def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
     if not save_directory.endswith("/"):
         save_directory += "/"
     save_directory += "StudentSearchResults"
+    os.makedirs(os.path.dirname(save_directory), exist_ok=True)
     with open(save_directory, "w") as f:
         json.dump(new, f)
 
@@ -57,8 +58,15 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
     for result in results:
         for source in result["retrieved_sources"]:
             sources += "\n" + get_text({"path": source["file_path"], "start": source["first_character_index"], "end": source["last_character_index"]}) + "\n"
-        search_results.search_results.append(MinimalAnswer(answer=get_answer(llm, result["question"], 0, sources)))
-    print(search_results)
+        search_results.search_results.append(MinimalAnswer(question_id=result["question_id"], question=result["question"], retrieved_sources=result["retrieved_sources"], answer=get_answer(llm, result["question"], 0, sources)))
+    new = search_results.model_dump()
+    if not save_directory.endswith("/"):
+        save_directory += "/"
+    save_directory += "StudentSearchResultsAndAnswer"
+
+    os.makedirs(os.path.dirname(save_directory), exist_ok=True)
+    with open(save_directory, "w") as f:
+        json.dump(new, f)
 
 
 if __name__ == "__main__":
