@@ -8,7 +8,6 @@ class MinimalSource(BaseModel):
 
 
 class UnansweredQuestion(BaseModel):
-#    question_id: str = Field(default_factory=lambda:str(uuid.uuid4()))
     question: str
 
 
@@ -29,3 +28,8 @@ class MinimalSearchResults(BaseModel):
 
 class MinimalAnswer(MinimalSearchResults):
     answer: str
+
+
+class StudentSearchResultsAndAnswer(BaseModel):
+    search_results: list[MinimalAnswer]
+    k: int

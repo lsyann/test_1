@@ -1,4 +1,4 @@
-from .__init__ import write_chunks, get_scores, MinimalSearchResults, MinimalSource
+from .__init__ import write_chunks, get_scores, get_text, get_answer, MinimalSearchResults, MinimalSource, StudentSearchResultsAndAnswer, MinimalAnswer, Small_LLM_Model
 import fire
 import json
 
@@ -13,7 +13,7 @@ def search(prompt: str, k: int) -> None:
         print(f"{elem["path"]} [{elem["start"]}:{elem["end"]}]")
 
 
-def search_dataset(dataset_path: str, k: int, save_directory: str):
+def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
     with open(dataset_path, "r") as f:
         questions = json.load(f)["rag_questions"]
     lst = []
@@ -21,13 +21,44 @@ def search_dataset(dataset_path: str, k: int, save_directory: str):
     for i in range(1):
         q = questions[i]
         q["question"] == "llm"
-        temp = [MinimalSource(file_path=elem["path"], first_character_index=elem["start"], last_character_index=elem["end"]) for elem in get_scores(q["question"], k)]
-        lst.append(MinimalSearchResults(question_id=q["question_id"], question=q["question"], retrieved_sources=temp))
+
+        temp = [MinimalSource(
+            file_path=elem["path"],
+            first_character_index=elem["start"],
+            last_character_index=elem["end"])
+                for elem in get_scores(q["question"], k)]
+
+        lst.append(MinimalSearchResults(
+            question_id=q["question_id"], 
+            question=q["question"],
+            retrieved_sources=temp))
+
     new = []
-    for elem in temp:
+    for elem in lst:
         new.append(elem.model_dump())
+    if not save_directory.endswith("/"):
+        save_directory += "/"
+    save_directory += "StudentSearchResults"
     with open(save_directory, "w") as f:
         json.dump(new, f)
+
+
+def answer(prompt: str, k: int) -> None:
+    llm = Small_LLM_Model()
+    print(get_answer(llm, prompt, k))
+
+
+def answer_dataset(student_search_results_path: str, save_directory: str) -> None:
+    llm = Small_LLM_Model()
+    with open(student_search_results_path, "r") as f:
+        results = json.load(f)
+    search_results = StudentSearchResultsAndAnswer(search_results=[], k=len(results))
+    sources = ""
+    for result in results:
+        for source in result["retrieved_sources"]:
+            sources += "\n" + get_text({"path": source["file_path"], "start": source["first_character_index"], "end": source["last_character_index"]}) + "\n"
+        search_results.search_results.append(MinimalAnswer(answer=get_answer(llm, result["question"], 0, sources)))
+    print(search_results)
 
 
 if __name__ == "__main__":
