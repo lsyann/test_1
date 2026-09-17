@@ -80,7 +80,7 @@ def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "")
             context += "\n" + get_text(source) + "\n\n"
     else:
         context += "\n" + new_sources + "\n\n"
-    context += '"""\n\nQuestion: ' + prompt + "\n\nAnswer: "
+    context += '"""\n\nQuestion: ' + prompt + "end you answer with 'eol'\n\nAnswer: "
 
     tokens = llm.encode(context)
     answer = []
@@ -91,7 +91,6 @@ def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "")
         tokens.append(index)
         answer.append(index)
         max_tokens += 1
-        if '.' in llm.decode([index]) or max_tokens > 100:
-            break
-    temp = llm.decode(answer)
-    return temp
+        if max_tokens > 100 or llm.decode(answer).endswith("eol"):
+            return llm.decode(answer)[:-3]
+    return llm.decode(answer)

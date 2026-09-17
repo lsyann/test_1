@@ -1,6 +1,7 @@
 from .__init__ import write_chunks, get_scores, get_text, get_answer, MinimalSearchResults, MinimalSource, StudentSearchResultsAndAnswer, MinimalAnswer, Small_LLM_Model
 import fire
 import json
+import os
 
 
 def index(max_chunk_size: int) -> None:
@@ -10,7 +11,7 @@ def index(max_chunk_size: int) -> None:
 def search(prompt: str, k: int) -> None:
     results = get_scores(prompt, k)
     for elem in results:
-        print(f"{elem["path"]} [{elem["start"]}:{elem["end"]}]")
+        print(f"{elem["file_path"]} [{elem["first_character_index"]}:{elem["last_character_index"]}]")
 
 
 def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
@@ -22,16 +23,14 @@ def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
         q = questions[i]
         q["question"] == "llm"
 
-        temp = [MinimalSource(
-            file_path=elem["path"],
-            first_character_index=elem["start"],
-            last_character_index=elem["end"])
-                for elem in get_scores(q["question"], k)]
+        sources = []
+        for elem in get_scores(q["question"], k):
+            sources.append(MinimalSource.model_validate(elem))
 
         lst.append(MinimalSearchResults(
             question_id=q["question_id"], 
             question=q["question"],
-            retrieved_sources=temp))
+            retrieved_sources=sources))
 
     new = []
     for elem in lst:

@@ -4,13 +4,13 @@ import math
 
 def get_text(doc: dict) -> str:
     file = ""
-    with open(doc["path"], "r") as f:
+    with open(doc["file_path"], "r") as f:
         for line in f:
             file += line
 
     chunk = ""
-    index = doc["start"]
-    while index < doc["end"]:
+    index = doc["first_character_index"]
+    while index < doc["last_character_index"]:
         chunk += file[index]
         index += 1
     return chunk
@@ -27,7 +27,7 @@ def _get_score(word: str, scores: list[int], data: list[dict]) -> int:
     avg_len = 0
     nb_docs = len(data)
     for doc in data:
-        avg_len += doc["end"] - doc["start"]
+        avg_len += doc["last_character_index"] - doc["first_character_index"]
     avg_len = round(avg_len / nb_docs)
     
     data_text = []
@@ -60,9 +60,6 @@ def get_scores(prompt: str, k: int) -> list[dict]:
         _get_score(word, scores, data)
     top_results = []
     for i in range(k):
-        """print(data[scores.index(max(scores))]["path"], end='')
-        print(f" [{data[scores.index(max(scores))]["start"]}:", end='')
-        print(f"{data[scores.index(max(scores))]["end"]}]")"""
         top_results.append(data[scores.index(max(scores))])
         data.pop(scores.index(max(scores)))
         scores.pop(scores.index(max(scores)))

@@ -1,12 +1,6 @@
 import os
 import json
-
-
-class Chunk():
-    def __init__(self, path, start, end):
-        self.file_path = path
-        self.first_character_index = start
-        self.last_character_index = end
+from .pydantic_classes import MinimalSource
 
 
 def _divider(temp: int, index: int, max_length: int) -> int:
@@ -47,7 +41,7 @@ def _chunk_code(file: str, index: int, max_length: int) -> int:
     return _divider(temp, index, max_length)
 
 
-def _get_chunks(path: str, max_length: int, is_code: bool) -> list[Chunk]:
+def _get_chunks(path: str, max_length: int, is_code: bool) -> list[MinimalSource]:
     file = ""
     with open(path, "r") as f:
         for line in f:
@@ -58,12 +52,12 @@ def _get_chunks(path: str, max_length: int, is_code: bool) -> list[Chunk]:
     chunk_list = []
     while index < file_len:
         chunk_end_index = chunk_method(file, index, max_length)
-        chunk_list.append(Chunk(path, index, chunk_end_index))
+        chunk_list.append(MinimalSource(file_path=path, first_character_index=index, last_character_index=chunk_end_index))
         index = chunk_end_index + 1
     return chunk_list
 
 
-def _chunk_files(path: str, max_length: int) -> list[list[Chunk]]:
+def _chunk_files(path: str, max_length: int) -> list[list[MinimalSource]]:
     files = os.listdir(path)
     lst = []
     for file in files:
@@ -86,7 +80,7 @@ def write_chunks(max_chunk_size: int):
     lst = []
     for file in chunked_files:
         for chunk in file:
-            lst.append({"path": chunk.file_path, "start": chunk.first_character_index, "end": chunk.last_character_index})
+            lst.append(chunk.model_dump())
     
     os.makedirs(os.path.dirname("data/processed"), exist_ok=True)
     with open("data/processed", "w") as f:
