@@ -1,5 +1,7 @@
 import json
 import math
+from tqdm import tqdm
+from .pydantic_classes import MinimalSource
 
 
 def get_text(doc: dict) -> str:
@@ -8,41 +10,49 @@ def get_text(doc: dict) -> str:
         for line in f:
             file += line
 
-    chunk = ""
-    index = doc["first_character_index"]
-    while index < doc["last_character_index"]:
-        chunk += file[index]
-        index += 1
-    return chunk
+    return file[doc["first_character_index"]:doc["last_character_index"] + 1]
                 
 
-def _TF(word: str, file: str, avg_len: int) -> int:
-    freq = file.count(word)
-    nb_word = len(file.split())
-
-    return freq / (freq + 1.2 * (1 - 0.75 + 0.75 * (nb_word / avg_len)))
-
-
-def _get_score(word: str, scores: list[int], data: list[dict]) -> int:
-    avg_len = 0
+def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[dict], avg_len: int) -> None:
     nb_docs = len(data)
-    for doc in data:
-        avg_len += doc["last_character_index"] - doc["first_character_index"]
-    avg_len = round(avg_len / nb_docs)
     
-    data_text = []
     count = 0
-    for doc in data:
-        data_text.append(get_text(doc))
-        if data_text[-1].count(word) != 0:
-            count += 1
+    freq = []
+    for i in range(nb_docs):
+        freq.append(data_text[i]["text"].count(word))
+        count += 1 if freq[-1] > 0 else 0
 
+    if nb_docs - count < nb_docs / 5:
+        return
     IDF = math.log((nb_docs - count + 0.5) / (count + 0.5))
     for i in range(nb_docs):
-        scores[i] += _TF(word, data_text[i], avg_len) * IDF
+        scores[i] += freq[i] / (freq[i] + 1.2 * (0.25 + 0.75 * (data_text[i]["len"] / avg_len))) * IDF
 
 
-def get_scores(prompt: str, k: int) -> list[dict]:
+def unique_prompt(prompt, data, data_text, avg_len, k):
+    scores = [0] * len(data)
+    for word in prompt.split():
+        _get_score(word, scores, data, data_text, avg_len)
+    top_results = []
+    copy = data
+    for i in range(k):
+        top_results.append(copy[scores.index(max(scores))])
+        copy.pop(scores.index(max(scores)))
+        scores.pop(scores.index(max(scores)))
+        lst = []
+        for elem in top_results:
+            lst.append(MinimalSource.model_validate(elem))
+    return lst
+
+
+def multiple_prompts(prompts, data, data_text, avg_len, k):
+    lst = []
+    for i in tqdm(range(len(prompts)), desc="searching dataset"):
+        lst.append(unique_prompt(prompts[i]["question"], data, data_text, avg_len, k))
+    return lst
+
+
+def get_sources(prompts, k: int, multiple: bool) -> list[dict]:
     try:
         with open("data/processed", "r") as f:
             data = json.load(f)
@@ -53,17 +63,15 @@ def get_scores(prompt: str, k: int) -> list[dict]:
         print("Missing data file: ", err)
         return 0
 
-    scores = []
-    for elem in data:
-        scores.append(0)
-    for word in prompt.split():
-        _get_score(word, scores, data)
-    top_results = []
-    for i in range(k):
-        top_results.append(data[scores.index(max(scores))])
-        data.pop(scores.index(max(scores)))
-        scores.pop(scores.index(max(scores)))
-    return top_results
+    data_text = [{"text": get_text(elem)} for elem in data]
+    avg_len = 0
+    for i in range(len(data)):
+        data_text[i]["len"] = len(data_text[i]["text"].split())
+        avg_len += data[i]["last_character_index"] - data[i]["first_character_index"]
+    avg_len = round(avg_len / len(data))
+    if multiple:
+        return multiple_prompts(prompts, data, data_text, avg_len, k)
+    return unique_prompt(prompts, data, data_text, avg_len, k)
 
 
 if __name__ == "__main__":

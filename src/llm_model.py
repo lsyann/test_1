@@ -2,7 +2,7 @@ from typing import Tuple
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer, PreTrainedModel, logging
 from huggingface_hub import hf_hub_download
-from .retrieval import get_scores, get_text
+from .retrieval import get_sources, get_text
 
 
 class Small_LLM_Model:
@@ -72,7 +72,9 @@ class Small_LLM_Model:
 
 def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "") -> str:
     if not new_sources:
-        sources = get_scores(prompt, k)
+        sources = get_sources(prompt, k)
+
+    torch.cuda.memory.empth_cache()
 
     context = '"""use the following context to answer the question:\n'
     if not new_sources:
@@ -80,7 +82,7 @@ def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "")
             context += "\n" + get_text(source) + "\n\n"
     else:
         context += "\n" + new_sources + "\n\n"
-    context += '"""\n\nQuestion: ' + prompt + "end you answer with 'eol'\n\nAnswer: "
+    context += '"""\n\nQuestion: "' + prompt + '"\n\nAnswer: "'
 
     tokens = llm.encode(context)
     answer = []
@@ -91,6 +93,6 @@ def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "")
         tokens.append(index)
         answer.append(index)
         max_tokens += 1
-        if max_tokens > 100 or llm.decode(answer).endswith("eol"):
+        if max_tokens > 100 or '"' in llm.decode(answer):
             return llm.decode(answer)[:-3]
     return llm.decode(answer)
