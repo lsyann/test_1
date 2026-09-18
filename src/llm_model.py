@@ -1,20 +1,7 @@
-from typing import Tuple, cast
+from typing import cast
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer, PreTrainedModel, logging
-from huggingface_hub import hf_hub_download
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
 from .retrieval import get_sources, get_text
-
-import gc
-import time
-from typing import Tuple
-
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer, PreTrainedModel, logging
-from huggingface_hub import hf_hub_download
-
-
-logging.set_verbosity_error()  # keep the console clean
-
 
 class Small_LLM_Model:
     def __init__(self):
@@ -26,9 +13,7 @@ class Small_LLM_Model:
 
 def get_answer(llm: Small_LLM_Model, prompt: str, k: int, new_sources: str = "") -> str:
     if not new_sources:
-        sources = get_sources(prompt, k)
-    gc.collect()
-    torch.cuda.empty_cache()
+        sources = get_sources(prompt, k, False)
     context = '"""use the following context to answer the question:\n'
     if not new_sources:
         for source in sources:

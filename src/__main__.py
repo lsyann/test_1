@@ -9,8 +9,8 @@ def index(max_chunk_size: int) -> None:
     write_chunks(max_chunk_size)
 
 
-def search(prompt: str, k: int) -> None:
-    results = get_sources(prompt, k, False)
+def search(query: str, k: int) -> None:
+    results = get_sources(query, k, False)
     for elem in results:
         print(f"{elem.file_path} [{elem.first_character_index}:{elem.last_character_index}]")
 
@@ -34,8 +34,8 @@ def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
         save_directory += "/"
     save_directory += "StudentSearchResults"
     os.makedirs(os.path.dirname(save_directory), exist_ok=True)
-    with open(save_directory, "w") as f:
-        json.dump(new, f)
+    with open(save_directory, "w", encoding="utf-8") as f:
+        json.dump(new, f, indent=2, ensure_ascii=False)
 
 
 def answer(prompt: str, k: int) -> None:
@@ -59,7 +59,6 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
                     retrieved_sources=results[i]["retrieved_sources"],
                     answer=get_answer(llm, results[i]["question"], 0, sources)))
                 
-        print(search_results.search_results[-1].answer)
     new = search_results.model_dump()
     if not save_directory.endswith("/"):
         save_directory += "/"
@@ -68,6 +67,23 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
     os.makedirs(os.path.dirname(save_directory), exist_ok=True)
     with open(save_directory, "w") as f:
         json.dump(new, f)
+
+
+def evaluate(student_search_results_path, dataset_path) -> None:
+    with open(dataset_path, "r") as f:
+        dataset = json.load(f)["rag_questions"]
+    with open(student_search_results_path, "r") as f:
+        results = json.load(f)
+    correct, incorrect = 0, 0
+
+    for answer in results:
+        for elem in dataset:
+            if answer["question_id"] == elem["question_id"]:
+                if elem["sources"][0]["file_path"] in [s["file_path"] for s in answer["retrieved_sources"]]:
+                    correct += 1
+                else:
+                    incorrect += 1
+    print(f"{round(100 * correct / (incorrect + correct), 2)}% of your sources contained the correct path")
 
 
 if __name__ == "__main__":

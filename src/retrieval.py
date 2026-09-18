@@ -22,8 +22,6 @@ def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[d
         freq.append(data_text[i]["text"].count(word))
         count += 1 if freq[-1] > 0 else 0
 
-    if nb_docs - count < nb_docs / 5:
-        return
     IDF = math.log((nb_docs - count + 0.5) / (count + 0.5))
     for i in range(nb_docs):
         scores[i] += freq[i] / (freq[i] + 1.2 * (0.25 + 0.75 * (data_text[i]["len"] / avg_len))) * IDF
@@ -33,16 +31,8 @@ def unique_prompt(prompt, data, data_text, avg_len, k):
     scores = [0] * len(data)
     for word in prompt.split():
         _get_score(word, scores, data, data_text, avg_len)
-    top_results = []
-    copy = data
-    for i in range(k):
-        top_results.append(copy[scores.index(max(scores))])
-        copy.pop(scores.index(max(scores)))
-        scores.pop(scores.index(max(scores)))
-        lst = []
-        for elem in top_results:
-            lst.append(MinimalSource.model_validate(elem))
-    return lst
+    index = [idx for idx, val in sorted(enumerate(scores), key=lambda x: x[1], reverse=True)[:k]]
+    return [MinimalSource.model_validate(data[elem]) for elem in index]
 
 
 def multiple_prompts(prompts, data, data_text, avg_len, k):
