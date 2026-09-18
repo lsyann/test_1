@@ -18,8 +18,8 @@ def search(prompt: str, k: int) -> None:
 def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
     with open(dataset_path, "r") as f:
         q = json.load(f)["rag_questions"]
-    lst = []
 
+    lst = []
     sources = get_sources(q, k, True)
     for i in range(len(q)):
         lst.append(MinimalSearchResults(
@@ -52,7 +52,14 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
     for i in tqdm(range(len(results)), desc = "answering dataset"):
         for source in results[i]["retrieved_sources"]:
             sources += "\n" + get_text(source) + "\n"
-        search_results.search_results.append(MinimalAnswer(question_id=results[i]["question_id"], question=results[i]["question"], retrieved_sources=results[i]["retrieved_sources"], answer=get_answer(llm, results[i]["question"], 0, sources)))
+        search_results.search_results.append(
+                MinimalAnswer(
+                    question_id=results[i]["question_id"],
+                    question=results[i]["question"],
+                    retrieved_sources=results[i]["retrieved_sources"],
+                    answer=get_answer(llm, results[i]["question"], 0, sources)))
+                
+        print(search_results.search_results[-1].answer)
     new = search_results.model_dump()
     if not save_directory.endswith("/"):
         save_directory += "/"
