@@ -22,7 +22,7 @@ def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[d
         freq.append(data_text[i]["text"].count(word))
         count += 1 if freq[-1] > 0 else 0
 
-    IDF = math.log((nb_docs - count + 0.5) / (count + 0.5))
+    IDF = math.log(1 + (nb_docs - count + 0.5) / (count + 0.5))
     for i in range(nb_docs):
         scores[i] += freq[i] / (freq[i] + 1.2 * (0.25 + 0.75 * (data_text[i]["len"] / avg_len))) * IDF
 
@@ -56,11 +56,9 @@ def get_sources(prompts, k: int, multiple: bool) -> list[dict]:
         return 0
 
     data_text = [{"text": get_text(elem)} for elem in data]
-    avg_len = 0
     for i in range(len(data)):
         data_text[i]["len"] = len(data_text[i]["text"].split())
-        avg_len += data[i]["last_character_index"] - data[i]["first_character_index"]
-    avg_len = round(avg_len / len(data))
+    avg_len = sum(d["len"] for d in data_text) / len(data)
     if multiple:
         return multiple_prompts(prompts, data, data_text, avg_len, k)
     return unique_prompt(prompts, data, data_text, avg_len, k)
