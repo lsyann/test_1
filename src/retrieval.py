@@ -4,6 +4,10 @@ from tqdm import tqdm
 from .pydantic_classes import MinimalSource
 
 
+def tokenize(text: str) -> list[str]:
+    cleaned = "".join(c if c.isalnum() or c == '_' else " " for c in text)
+    return cleaned.lower().split()
+
 def get_text(doc: dict) -> str:
     file = ""
     with open(doc["file_path"], "r") as f:
@@ -31,7 +35,7 @@ def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[d
 
 def unique_prompt(prompt, data, data_text, avg_len, k):
     scores = [0] * len(data)
-    for word in prompt.split():
+    for word in tokenize(prompt):
         _get_score(word, scores, data, data_text, avg_len)
     if scores == [0] * len(scores):
         return [MinimalSource(file_path="", first_character_index=0, last_character_index=0)]
@@ -57,9 +61,9 @@ def get_sources(prompts, k: int, multiple: bool) -> list[dict]:
         print("Missing data file: ", err)
         return 0
 
-    data_text = [{"text": get_text(elem)} for elem in data]
+    data_text = [{"text": tokenize(get_text(elem))} for elem in data]
     for i in range(len(data)):
-        data_text[i]["len"] = len(data_text[i]["text"].split())
+        data_text[i]["len"] = len(data_text[i]["text"])
     avg_len = sum(d["len"] for d in data_text) / len(data)
     if multiple:
         return multiple_prompts(prompts, data, data_text, avg_len, k)
