@@ -31,6 +31,8 @@ def unique_prompt(prompt, data, data_text, avg_len, k):
     scores = [0] * len(data)
     for word in prompt.split():
         _get_score(word, scores, data, data_text, avg_len)
+    if scores == [0] * len(scores):
+        return [MinimalSource(file_path="", first_character_index=0, last_character_index=0)]
     index = [idx for idx, val in sorted(enumerate(scores), key=lambda x: x[1], reverse=True)[:k]]
     return [MinimalSource.model_validate(data[elem]) for elem in index]
 

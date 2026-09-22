@@ -1,4 +1,4 @@
-from .__init__ import write_chunks, get_sources, get_text, get_answer, MinimalSearchResults, MinimalSource, StudentSearchResultsAndAnswer, MinimalAnswer, Small_LLM_Model
+from .__init__ import write_chunks, get_sources, get_text, get_answer, MinimalSearchResults, MinimalSource, StudentSearchResultsAndAnswer, MinimalAnswer, RagDataset, StudentSearchResults, Small_LLM_Model
 from tqdm import tqdm
 import fire
 import json
@@ -19,23 +19,20 @@ def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
     with open(dataset_path, "r") as f:
         q = json.load(f)["rag_questions"]
 
-    lst = []
+    lst = StudentSearchResults(search_results=[], k=k)
     sources = get_sources(q, k, True)
     for i in range(len(q)):
-        lst.append(MinimalSearchResults(
+        lst.search_results.append(MinimalSearchResults(
             question_id=q[i]["question_id"], 
             question=q[i]["question"],
             retrieved_sources=sources[i]))
 
-    new = []
-    for elem in lst:
-        new.append(elem.model_dump())
     if not save_directory.endswith("/"):
         save_directory += "/"
     save_directory += "StudentSearchResults"
     os.makedirs(os.path.dirname(save_directory), exist_ok=True)
     with open(save_directory, "w", encoding="utf-8") as f:
-        json.dump(new, f, indent=2, ensure_ascii=False)
+        json.dump(lst.model_dump(), f, indent=2, ensure_ascii=False)
 
 
 def answer(prompt: str, k: int) -> None:
@@ -69,21 +66,56 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
         json.dump(new, f)
 
 
-def evaluate(student_search_results_path, dataset_path) -> None:
+"""def evaluate(student_search_results_path, dataset_path) -> None:
     with open(dataset_path, "r") as f:
-        dataset = json.load(f)["rag_questions"]
+        dataset = RagDataset.model_validate(json.load(f)).rag_questions
     with open(student_search_results_path, "r") as f:
         results = json.load(f)
     correct, incorrect = 0, 0
 
-    for answer in results:
+    for answer in results["search_results"]:
         for elem in dataset:
-            if answer["question_id"] == elem["question_id"]:
-                if elem["sources"][0]["file_path"] in [s["file_path"] for s in answer["retrieved_sources"]]:
-                    correct += 1
-                else:
+            correct_source = elem.sources[0]
+            if answer["question"] == elem.question:
+                found = 0
+                for source in answer["retrieved_sources"]:
+                    if correct_source.file_path == source["file_path"]:
+                        nb = min(correct_source.last_character_index, source["last_character_index"]) - max(correct_source.first_character_index, source["first_character_index"])
+                        if not found and nb > (correct_source.last_character_index - correct_source.first_character_index) * 0.05:
+                            correct += 1
+                            found = 1
+                if not found:
+                    print(correct_source, "\n\n", answer["retrieved_sources"])
+                    return
                     incorrect += 1
-    print(f"{round(100 * correct / (incorrect + correct), 2)}% of your sources contained the correct path")
+    print(f"{round(100 * correct / (incorrect + correct), 2)}% of your sources contained the correct path and at least 5% intersection with the correct text")
+    print(correct, incorrect)"""
+
+
+def evaluate(student_search_results_path, dataset_path) -> None:
+    with open(dataset_path, "r") as f:
+        dataset = RagDataset.model_validate(json.load(f)).rag_questions
+    with open(student_search_results_path, "r") as f:
+        student_results = json.load(f)["search_results"]
+    
+    correct, incorrect = 0, 0
+
+    for answer in dataset:
+        correct_source = answer.sources[0]
+        found = 0
+        for student_answer in student_results:
+            if answer.question == student_answer["question"]:
+                for student_source in student_answer["retrieved_sources"]:
+                    if student_source["file_path"] == correct_source.file_path:
+                        if min(student_source["last_character_index"], correct_source.last_character_index) - max(student_source["first_character_index"], correct_source.first_character_index) > 0.05 * (correct_source.last_character_index - correct_source.first_character_index):
+                            correct += 1
+                            found += 1
+                            break
+                        else:
+                            print("\n\n", correct_source, "\n", student_source)
+        if not found:
+            incorrect += 1
+    print(correct, incorrect)
 
 
 if __name__ == "__main__":
