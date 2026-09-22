@@ -66,32 +66,6 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
         json.dump(new, f)
 
 
-"""def evaluate(student_search_results_path, dataset_path) -> None:
-    with open(dataset_path, "r") as f:
-        dataset = RagDataset.model_validate(json.load(f)).rag_questions
-    with open(student_search_results_path, "r") as f:
-        results = json.load(f)
-    correct, incorrect = 0, 0
-
-    for answer in results["search_results"]:
-        for elem in dataset:
-            correct_source = elem.sources[0]
-            if answer["question"] == elem.question:
-                found = 0
-                for source in answer["retrieved_sources"]:
-                    if correct_source.file_path == source["file_path"]:
-                        nb = min(correct_source.last_character_index, source["last_character_index"]) - max(correct_source.first_character_index, source["first_character_index"])
-                        if not found and nb > (correct_source.last_character_index - correct_source.first_character_index) * 0.05:
-                            correct += 1
-                            found = 1
-                if not found:
-                    print(correct_source, "\n\n", answer["retrieved_sources"])
-                    return
-                    incorrect += 1
-    print(f"{round(100 * correct / (incorrect + correct), 2)}% of your sources contained the correct path and at least 5% intersection with the correct text")
-    print(correct, incorrect)"""
-
-
 def evaluate(student_search_results_path, dataset_path) -> None:
     with open(dataset_path, "r") as f:
         dataset = RagDataset.model_validate(json.load(f)).rag_questions
@@ -111,8 +85,6 @@ def evaluate(student_search_results_path, dataset_path) -> None:
                             correct += 1
                             found += 1
                             break
-                        else:
-                            print("\n\n", correct_source, "\n", student_source)
         if not found:
             incorrect += 1
     print(correct, incorrect)

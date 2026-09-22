@@ -9,8 +9,10 @@ def get_text(doc: dict) -> str:
     with open(doc["file_path"], "r") as f:
         for line in f:
             file += line
-
-    return file[doc["first_character_index"]:doc["last_character_index"] + 1]
+    
+    chunk = "".join(doc["file_path"].split("/")) + "\n"
+    chunk += file[doc["first_character_index"]:doc["last_character_index"] + 1]
+    return chunk
                 
 
 def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[dict], avg_len: int) -> None:
@@ -62,7 +64,3 @@ def get_sources(prompts, k: int, multiple: bool) -> list[dict]:
     if multiple:
         return multiple_prompts(prompts, data, data_text, avg_len, k)
     return unique_prompt(prompts, data, data_text, avg_len, k)
-
-
-if __name__ == "__main__":
-    placeholder("What determines whether custom allreduce is enabled in vLLM's CudaCommunicator?")
