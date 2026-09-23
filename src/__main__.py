@@ -1,4 +1,7 @@
-from .__init__ import write_chunks, get_sources, get_text, get_answer, MinimalSearchResults, MinimalSource, StudentSearchResultsAndAnswer, MinimalAnswer, RagDataset, StudentSearchResults, Small_LLM_Model
+from .__init__ import (write_chunks, get_sources, get_text,
+                       get_answer, MinimalSearchResults,
+                       StudentSearchResultsAndAnswer, MinimalAnswer,
+                       RagDataset, StudentSearchResults, Small_LLM_Model)
 from tqdm import tqdm
 import fire
 import json
@@ -12,7 +15,8 @@ def index(max_chunk_size: int) -> None:
 def search(query: str, k: int) -> None:
     results = get_sources(query, k, False)
     for elem in results:
-        print(f"{elem.file_path} [{elem.first_character_index}:{elem.last_character_index}]")
+        print(f"{elem.file_path} ")
+        print(f"[{elem.first_character_index}:{elem.last_character_index}]")
 
 
 def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
@@ -23,7 +27,7 @@ def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
     sources = get_sources(q, k, True)
     for i in range(len(q)):
         lst.search_results.append(MinimalSearchResults(
-            question_id=q[i]["question_id"], 
+            question_id=q[i]["question_id"],
             question=q[i]["question"],
             retrieved_sources=sources[i]))
 
@@ -40,13 +44,17 @@ def answer(prompt: str, k: int) -> None:
     print(get_answer(llm, prompt, k))
 
 
-def answer_dataset(student_search_results_path: str, save_directory: str) -> None:
+def answer_dataset(
+        student_search_results_path: str,
+        save_directory: str) -> None:
+
     llm = Small_LLM_Model()
     with open(student_search_results_path, "r") as f:
         results = json.load(f)
-    search_results = StudentSearchResultsAndAnswer(search_results=[], k=len(results))
+    search_results = StudentSearchResultsAndAnswer(
+            search_results=[], k=len(results))
     sources = ""
-    for i in tqdm(range(len(results)), desc = "answering dataset"):
+    for i in tqdm(range(len(results)), desc="answering dataset"):
         for source in results[i]["retrieved_sources"]:
             sources += "\n" + get_text(source) + "\n"
         search_results.search_results.append(
@@ -54,8 +62,9 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
                     question_id=results[i]["question_id"],
                     question=results[i]["question"],
                     retrieved_sources=results[i]["retrieved_sources"],
-                    answer=get_answer(llm, results[i]["question"], 0, sources)))
-                
+                    answer=get_answer(
+                        llm, results[i]["question"], 0, sources)))
+
     new = search_results.model_dump()
     if not save_directory.endswith("/"):
         save_directory += "/"
@@ -66,12 +75,12 @@ def answer_dataset(student_search_results_path: str, save_directory: str) -> Non
         json.dump(new, f)
 
 
-def evaluate(student_search_results_path, dataset_path) -> None:
+def evaluate(student_search_results_path: str, dataset_path: str) -> None:
     with open(dataset_path, "r") as f:
         dataset = RagDataset.model_validate(json.load(f)).rag_questions
     with open(student_search_results_path, "r") as f:
         student_results = json.load(f)["search_results"]
-    
+
     correct, incorrect = 0, 0
 
     for answer in dataset:
@@ -81,7 +90,15 @@ def evaluate(student_search_results_path, dataset_path) -> None:
             if answer.question == student_answer["question"]:
                 for student_source in student_answer["retrieved_sources"]:
                     if student_source["file_path"] == correct_source.file_path:
-                        if min(student_source["last_character_index"], correct_source.last_character_index) - max(student_source["first_character_index"], correct_source.first_character_index) > 0.05 * (correct_source.last_character_index - correct_source.first_character_index):
+                        temp = min(
+                                student_source["last_character_index"],
+                                correct_source.last_character_index)
+                        temp = temp - max(
+                            student_source["first_character_index"],
+                            correct_source.first_character_index)
+                        if temp > 0.05 * (
+                                correct_source.last_character_index - (
+                                    correct_source.first_character_index)):
                             correct += 1
                             found += 1
                             break

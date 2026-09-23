@@ -27,13 +27,16 @@ def _chunk_text(file: str, index: int, max_length: int) -> int:
 
 def _chunk_code(file: str, index: int, max_length: int) -> int:
     temp = index
-    if file[temp] == "@":
-        temp = file.find("def ", temp) if file.find("def ", temp) != -1 else temp + 1
+    if file[temp] == "@" and file.find("def ", temp) != -1:
+        temp = file.find("def ", temp)
+    else:
+        temp += 1
     if file.find("def ", temp) == temp:
         temp += 3
     if file.find("class ", temp) == temp:
         temp += 4
-    end = [file.find("def ", temp), file.find("class ", temp), file.find("@", temp)]
+    end = [file.find("def ", temp), file.find("class ", temp)]
+    end.append(file.find("@", temp))
     end = [elem for elem in end if elem != -1]
     temp = len(file) - 1 if len(end) == 0 else min(end) - 1
     if temp - index < max_length:
@@ -41,7 +44,10 @@ def _chunk_code(file: str, index: int, max_length: int) -> int:
     return _divider(temp, index, max_length)
 
 
-def _get_chunks(path: str, max_length: int, is_code: bool) -> list[MinimalSource]:
+def _get_chunks(
+        path: str,
+        max_length: int,
+        is_code: bool) -> list[MinimalSource]:
     file = ""
     with open(path, "r") as f:
         for line in f:
@@ -52,7 +58,11 @@ def _get_chunks(path: str, max_length: int, is_code: bool) -> list[MinimalSource
     chunk_list = []
     while index < file_len:
         chunk_end_index = chunk_method(file, index, max_length)
-        chunk_list.append(MinimalSource(file_path=path, first_character_index=index, last_character_index=chunk_end_index))
+        chunk_list.append(
+                MinimalSource(
+                    file_path=path,
+                    first_character_index=index,
+                    last_character_index=chunk_end_index))
         index = chunk_end_index + 1
     return chunk_list
 
@@ -67,7 +77,7 @@ def _chunk_files(path: str, max_length: int) -> list[list[MinimalSource]]:
                 for elem in temp:
                     lst.append(elem)
         except Exception as err:
-            ...
+            err = err
         if file.endswith(".md") or file.endswith(".txt"):
             lst.append(_get_chunks(path + "/" + file, max_length, False))
         elif file.endswith(".py"):
@@ -75,15 +85,15 @@ def _chunk_files(path: str, max_length: int) -> list[list[MinimalSource]]:
     return lst
 
 
-def write_chunks(max_chunk_size: int):
+def write_chunks(max_chunk_size: int) -> None:
     chunked_files = _chunk_files("data/raw", max_chunk_size)
     lst = []
     for file in chunked_files:
         for chunk in file:
             lst.append(chunk.model_dump())
-    
-    os.makedirs(os.path.dirname("data/processed"), exist_ok=True)
-    with open("data/processed", "w") as f:
+
+    os.makedirs(os.path.dirname("data/processed/"), exist_ok=True)
+    with open("data/processed/processed", "w") as f:
         json.dump(lst, f)
 
 

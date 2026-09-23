@@ -1,27 +1,34 @@
 import json
 import math
 from tqdm import tqdm
+from typing import Any
 from .pydantic_classes import MinimalSource
 
 
-def tokenize(text: str) -> list[str]:
-    cleaned = "".join(c if c.isalnum() or c == '_' else " " for c in text)
-    return cleaned.lower().split()
+def clean(text: str) -> list[str]:
+    cleaner = "".join(c if c.isalnum() or c == '_' else " " for c in text)
+    return cleaner.lower().split()
 
-def get_text(doc: dict) -> str:
+
+def get_text(doc: dict[str, Any]) -> str:
     file = ""
     with open(doc["file_path"], "r") as f:
         for line in f:
             file += line
-    
-    chunk = "".join(doc["file_path"].split("/")) + "\n"
+
+    chunk = " ".join(doc["file_path"].split("/")) + "\n"
     chunk += file[doc["first_character_index"]:doc["last_character_index"] + 1]
     return chunk
-                
 
-def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[dict], avg_len: int) -> None:
+
+def _get_score(
+        word: str, scores: list[int],
+        data: list[dict[str, Any]],
+        data_text: list[dict[str, Any]],
+        avg_len: float) -> None:
+
     nb_docs = len(data)
-    
+
     count = 0
     freq = []
     for i in range(nb_docs):
@@ -30,38 +37,54 @@ def _get_score(word: str, scores: list[int], data: list[dict], data_text: list[d
 
     IDF = math.log(1 + (nb_docs - count + 0.5) / (count + 0.5))
     for i in range(nb_docs):
-        scores[i] += freq[i] / (freq[i] + 1.2 * (0.25 + 0.75 * (data_text[i]["len"] / avg_len))) * IDF
+        temp = freq[i] + 1.2 * (0.25 + 0.75 * (data_text[i]["len"] / avg_len))
+        scores[i] += IDF * freq[i] / temp
 
 
-def unique_prompt(prompt, data, data_text, avg_len, k):
-    scores = [0] * len(data)
-    for word in tokenize(prompt):
-        _get_score(word, scores, data, data_text, avg_len)
-    if scores == [0] * len(scores):
-        return [MinimalSource(file_path="", first_character_index=0, last_character_index=0)]
-    index = [idx for idx, val in sorted(enumerate(scores), key=lambda x: x[1], reverse=True)[:k]]
+def unique_prompt(
+        prompt: str,
+        data: list[dict[str, Any]],
+        data_text: list[dict[str, Any]],
+        avg_len: float, k: int) -> MinimalSource:
+
+    score = [0] * len(data)
+    for word in clean(prompt):
+        _get_score(word, score, data, data_text, avg_len)
+    if score == [0] * len(score):
+        return [MinimalSource(
+            file_path="",
+            first_character_index=0,
+            last_character_index=0)]
+    index = []
+    for i, _ in sorted(enumerate(score), key=lambda x: x[1], reverse=True)[:k]:
+        index.append(i)
     return [MinimalSource.model_validate(data[elem]) for elem in index]
 
 
-def multiple_prompts(prompts, data, data_text, avg_len, k):
+def multiple_prompts(
+        prompts: list[str],
+        data: list[dict[str, Any]],
+        data_text: list[dict[str, Any]],
+        avg_len: float,
+        k: int) -> list[MinimalSource]:
+
     lst = []
     for i in tqdm(range(len(prompts)), desc="searching dataset"):
-        lst.append(unique_prompt(prompts[i]["question"], data, data_text, avg_len, k))
+        lst.append(unique_prompt(
+            prompts[i]["question"],
+            data,
+            data_text,
+            avg_len,
+            k))
     return lst
 
 
-def get_sources(prompts, k: int, multiple: bool) -> list[dict]:
-    try:
-        with open("data/processed", "r") as f:
-            data = json.load(f)
-    except json.JSONDecodeError as err:
-        print("Invalid JSON syntax: ", err)
-        return 0
-    except FileNotFoundError as err:
-        print("Missing data file: ", err)
-        return 0
+def get_sources(prompts: Any, k: int, multiple: bool) -> Any:
+    with open("data/processed/processed", "r") as f:
+        data = json.load(f)
 
-    data_text = [{"text": tokenize(get_text(elem))} for elem in data]
+    data_text: list[dict[Any, Any]] = [
+            {"text": clean(get_text(elem))} for elem in data]
     for i in range(len(data)):
         data_text[i]["len"] = len(data_text[i]["text"])
     avg_len = sum(d["len"] for d in data_text) / len(data)
