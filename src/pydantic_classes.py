@@ -9,6 +9,7 @@ class MinimalSource(BaseModel):
 
 class UnansweredQuestion(BaseModel):
     question: str
+    question_id: str
 
 
 class AnsweredQuestion(UnansweredQuestion):

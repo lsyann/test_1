@@ -95,6 +95,7 @@ def write_chunks(max_chunk_size: int) -> None:
     os.makedirs(os.path.dirname("data/processed/"), exist_ok=True)
     with open("data/processed/processed", "w") as f:
         json.dump(lst, f)
+    print("Successfully chunked the corpus under data/processed/processed")
 
 
 if __name__ == "__main__":

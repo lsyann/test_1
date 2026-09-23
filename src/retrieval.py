@@ -2,7 +2,7 @@ import json
 import math
 from tqdm import tqdm
 from typing import Any
-from .pydantic_classes import MinimalSource
+from .pydantic_classes import MinimalSource, MinimalSearchResults, StudentSearchResults
 
 
 def clean(text: str) -> list[str]:
@@ -12,12 +12,12 @@ def clean(text: str) -> list[str]:
 
 def get_text(doc: dict[str, Any]) -> str:
     file = ""
-    with open(doc["file_path"], "r") as f:
+    with open(doc.file_path, "r") as f:
         for line in f:
             file += line
 
-    chunk = " ".join(doc["file_path"].split("/")) + "\n"
-    chunk += file[doc["first_character_index"]:doc["last_character_index"] + 1]
+    chunk = " ".join(doc.file_path.split("/")) + "\n"
+    chunk += file[doc.first_character_index:doc.last_character_index + 1]
     return chunk
 
 
@@ -68,20 +68,20 @@ def multiple_prompts(
         avg_len: float,
         k: int) -> list[MinimalSource]:
 
-    lst = []
+    search_results = StudentSearchResults(search_results=[], k=k)
     for i in tqdm(range(len(prompts)), desc="searching dataset"):
-        lst.append(unique_prompt(
-            prompts[i]["question"],
-            data,
-            data_text,
-            avg_len,
-            k))
-    return lst
+        search_results.search_results.append(MinimalSearchResults(
+            question_id=prompts[i].question_id,
+            question=prompts[i].question,
+            retrieved_sources=unique_prompt(
+                prompts[i].question,
+                data, data_text, avg_len, k)))
+    return search_results
 
 
 def get_sources(prompts: Any, k: int, multiple: bool) -> Any:
     with open("data/processed/processed", "r") as f:
-        data = json.load(f)
+        data = [MinimalSource.model_validate(elem) for elem in json.load(f)]
 
     data_text: list[dict[Any, Any]] = [
             {"text": clean(get_text(elem))} for elem in data]
