@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, Any
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
 from .retrieval import get_sources, get_text
@@ -6,11 +6,15 @@ from .pydantic_classes import MinimalSource
 
 
 class Small_LLM_Model:
+    _device: str
+    _model: Any
+
     def __init__(self) -> None:
-        self._device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
         self._tokenizer = (AutoTokenizer.from_pretrained("Qwen/Qwen3-0.6B"))
         self._model = cast(PreTrainedModel,
-                           AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-0.6B"))
+                           AutoModelForCausalLM.from_pretrained(
+                               "Qwen/Qwen3-0.6B"))
         self._model.to(self._device)
 
 

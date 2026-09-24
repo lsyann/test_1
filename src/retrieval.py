@@ -95,5 +95,7 @@ def get_sources(
         data_text[i]["len"] = len(data_text[i]["text"])
     avg_len = sum(d["len"] for d in data_text) / len(data)
     if multiple:
-        return multiple_prompts(cast(list[UnansweredQuestion], prompts), data, data_text, avg_len, k)
+        return multiple_prompts(
+                cast(list[UnansweredQuestion], prompts),
+                data, data_text, avg_len, k)
     return unique_prompt(cast(str, prompts), data, data_text, avg_len, k)

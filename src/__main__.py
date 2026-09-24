@@ -1,4 +1,4 @@
-from __init__ import (write_chunks, get_sources,
+from .__init__ import (write_chunks, get_sources,
                        get_answer, StudentSearchResultsAndAnswer,
                        MinimalAnswer, RagDataset,
                        StudentSearchResults, Small_LLM_Model)
@@ -13,7 +13,7 @@ def index(max_chunk_size: int) -> None:
 
 
 def search(query: str, k: int) -> None:
-    results = get_sources(query, k, False)
+    results = get_sources(query, k if k > 0 else 0, False)
     for elem in results:
         print(f"{elem.file_path} ", end="")
         print(f"[{elem.first_character_index}:{elem.last_character_index}]")
