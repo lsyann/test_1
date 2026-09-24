@@ -1,7 +1,7 @@
-from .__init__ import (write_chunks, get_sources, get_text,
-                       get_answer, MinimalSearchResults,
-                       StudentSearchResultsAndAnswer, MinimalAnswer,
-                       RagDataset, StudentSearchResults, Small_LLM_Model)
+from __init__ import (write_chunks, get_sources,
+                       get_answer, StudentSearchResultsAndAnswer,
+                       MinimalAnswer, RagDataset,
+                       StudentSearchResults, Small_LLM_Model)
 from tqdm import tqdm
 import fire
 import json
@@ -44,22 +44,21 @@ def answer_dataset(
 
     llm = Small_LLM_Model()
     with open(student_search_results_path, "r") as f:
-        search_results = StudentSearchResults.model_validate(json.load(f)).search_results
+        search_results = StudentSearchResults.model_validate(
+                json.load(f)).search_results
 
     answer_results = StudentSearchResultsAndAnswer(
             search_results=[], k=5)
 
     for i in tqdm(range(len(search_results)), desc="answering dataset"):
-        sources = ""
-        for source in search_results[i].retrieved_sources:
-            sources += "\n" + get_text(source) + "\n"
         answer_results.search_results.append(
                 MinimalAnswer(
                     question_id=search_results[i].question_id,
                     question=search_results[i].question,
                     retrieved_sources=search_results[i].retrieved_sources,
                     answer=get_answer(
-                        llm, search_results[i].question, 0, sources)))
+                        llm, search_results[i].question, None,
+                        search_results[i].retrieved_sources)))
         print(answer_results.search_results[-1].question)
         print(answer_results.search_results[-1].answer)
 
@@ -76,7 +75,8 @@ def evaluate(student_search_results_path: str, dataset_path: str) -> None:
     with open(dataset_path, "r") as f:
         dataset = RagDataset.model_validate(json.load(f)).rag_questions
     with open(student_search_results_path, "r") as f:
-        student_results = json.load(f)["search_results"]
+        student_results = StudentSearchResults.model_validate(
+                json.load(f)).search_results
 
     correct, incorrect = 0, 0
 
@@ -84,16 +84,16 @@ def evaluate(student_search_results_path: str, dataset_path: str) -> None:
         correct_source = answer.sources[0]
         found = 0
         for student_answer in student_results:
-            if answer.question == student_answer["question"]:
-                for student_source in student_answer["retrieved_sources"]:
-                    if student_source["file_path"] == correct_source.file_path:
-                        temp = min(
-                                student_source["last_character_index"],
+            if answer.question_id == student_answer.question_id:
+                for student_source in student_answer.retrieved_sources:
+                    if student_source.file_path == correct_source.file_path:
+                        intersection = min(
+                                student_source.last_character_index,
                                 correct_source.last_character_index)
-                        temp = temp - max(
-                            student_source["first_character_index"],
+                        intersection -= max(
+                            student_source.first_character_index,
                             correct_source.first_character_index)
-                        if temp > 0.05 * (
+                        if intersection > 0.05 * (
                                 correct_source.last_character_index - (
                                     correct_source.first_character_index)):
                             correct += 1
@@ -101,7 +101,10 @@ def evaluate(student_search_results_path: str, dataset_path: str) -> None:
                             break
         if not found:
             incorrect += 1
-    print(correct, incorrect)
+    print(
+            f"{round(100 * (correct / (correct + incorrect)), 2)}"
+            "% of your sources contained the correct "
+            "path with at least 5% of the correct chunk")
 
 
 if __name__ == "__main__":

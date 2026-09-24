@@ -9,7 +9,9 @@ dependencies = [
     "huggingface-hub",
     "accelerate",
     "pydantic",
-    "fire"
+    "pydantic-settings",
+    "fire",
+    "mypy"
 ]
 
 [tool.mypy]

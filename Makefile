@@ -20,9 +20,9 @@ clean:
 
 lint:
 	flake8 src
-	mypy src
+	uv run mypy -m src
 
 lint-strict:
 	flake8 src
-	mypy --strict src
+	uv run mypy --strict -m src
 

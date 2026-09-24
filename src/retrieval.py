@@ -1,8 +1,11 @@
 import json
 import math
 from tqdm import tqdm
-from typing import Any
-from .pydantic_classes import MinimalSource, MinimalSearchResults, StudentSearchResults
+from typing import Any, cast
+from .pydantic_classes import (MinimalSource,
+                               MinimalSearchResults,
+                               StudentSearchResults,
+                               UnansweredQuestion)
 
 
 def clean(text: str) -> list[str]:
@@ -10,7 +13,7 @@ def clean(text: str) -> list[str]:
     return cleaner.lower().split()
 
 
-def get_text(doc: dict[str, Any]) -> str:
+def get_text(doc: MinimalSource) -> str:
     file = ""
     with open(doc.file_path, "r") as f:
         for line in f:
@@ -23,11 +26,10 @@ def get_text(doc: dict[str, Any]) -> str:
 
 def _get_score(
         word: str, scores: list[int],
-        data: list[dict[str, Any]],
         data_text: list[dict[str, Any]],
         avg_len: float) -> None:
 
-    nb_docs = len(data)
+    nb_docs = len(data_text)
 
     count = 0
     freq = []
@@ -43,13 +45,13 @@ def _get_score(
 
 def unique_prompt(
         prompt: str,
-        data: list[dict[str, Any]],
+        data: list[MinimalSource],
         data_text: list[dict[str, Any]],
-        avg_len: float, k: int) -> MinimalSource:
+        avg_len: float, k: int) -> list[MinimalSource]:
 
     score = [0] * len(data)
     for word in clean(prompt):
-        _get_score(word, score, data, data_text, avg_len)
+        _get_score(word, score, data_text, avg_len)
     if score == [0] * len(score):
         return [MinimalSource(
             file_path="",
@@ -62,11 +64,11 @@ def unique_prompt(
 
 
 def multiple_prompts(
-        prompts: list[str],
-        data: list[dict[str, Any]],
+        prompts: list[UnansweredQuestion],
+        data: list[MinimalSource],
         data_text: list[dict[str, Any]],
         avg_len: float,
-        k: int) -> list[MinimalSource]:
+        k: int) -> StudentSearchResults:
 
     search_results = StudentSearchResults(search_results=[], k=k)
     for i in tqdm(range(len(prompts)), desc="searching dataset"):
@@ -79,15 +81,19 @@ def multiple_prompts(
     return search_results
 
 
-def get_sources(prompts: Any, k: int, multiple: bool) -> Any:
+def get_sources(
+        prompts: list[UnansweredQuestion] | str,
+        k: int,
+        multiple: bool) -> Any:
+
     with open("data/processed/processed", "r") as f:
         data = [MinimalSource.model_validate(elem) for elem in json.load(f)]
 
-    data_text: list[dict[Any, Any]] = [
+    data_text: list[dict[str, Any]] = [
             {"text": clean(get_text(elem))} for elem in data]
     for i in range(len(data)):
         data_text[i]["len"] = len(data_text[i]["text"])
     avg_len = sum(d["len"] for d in data_text) / len(data)
     if multiple:
-        return multiple_prompts(prompts, data, data_text, avg_len, k)
-    return unique_prompt(prompts, data, data_text, avg_len, k)
+        return multiple_prompts(cast(list[UnansweredQuestion], prompts), data, data_text, avg_len, k)
+    return unique_prompt(cast(str, prompts), data, data_text, avg_len, k)
