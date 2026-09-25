@@ -21,6 +21,8 @@ def index(max_chunk_size: int) -> None:
 def search(query: str, k: int) -> None:
     results = get_sources(query, k if k > 0 else 0, False)
     for elem in results:
+        if not elem.file_path:
+            return
         print(f"{elem.file_path} ", end="")
         print(f"[{elem.first_character_index}:{elem.last_character_index}]")
 
