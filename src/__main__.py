@@ -65,8 +65,6 @@ def answer_dataset(
                     answer=get_answer(
                         llm, search_results[i].question, 0,
                         search_results[i].retrieved_sources)))
-        print(answer_results.search_results[-1].question)
-        print(answer_results.search_results[-1].answer)
 
     if not save_directory.endswith("/"):
         save_directory += "/"
