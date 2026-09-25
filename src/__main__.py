@@ -1,11 +1,17 @@
-from .__init__ import (write_chunks, get_sources,
-                       get_answer, StudentSearchResultsAndAnswer,
-                       MinimalAnswer, RagDataset,
-                       StudentSearchResults, Small_LLM_Model)
+from .retrieval import get_sources
+from .chunker import write_chunks
+from .llm_model import get_answer, Small_LLM_Model
+from .pydantic_classes import (
+        MinimalAnswer,
+        RagDataset,
+        StudentSearchResults,
+        StudentSearchResultsAndAnswer,
+        AnsweredQuestion)
 from tqdm import tqdm
 import fire
 import json
 import os
+from typing import cast
 
 
 def index(max_chunk_size: int) -> None:
@@ -57,7 +63,7 @@ def answer_dataset(
                     question=search_results[i].question,
                     retrieved_sources=search_results[i].retrieved_sources,
                     answer=get_answer(
-                        llm, search_results[i].question, None,
+                        llm, search_results[i].question, 0,
                         search_results[i].retrieved_sources)))
         print(answer_results.search_results[-1].question)
         print(answer_results.search_results[-1].answer)
@@ -73,7 +79,8 @@ def answer_dataset(
 
 def evaluate(student_search_results_path: str, dataset_path: str) -> None:
     with open(dataset_path, "r") as f:
-        dataset = RagDataset.model_validate(json.load(f)).rag_questions
+        temp = RagDataset.model_validate(json.load(f)).rag_questions
+    dataset = [cast(AnsweredQuestion, elem) for elem in temp]
     with open(student_search_results_path, "r") as f:
         student_results = StudentSearchResults.model_validate(
                 json.load(f)).search_results

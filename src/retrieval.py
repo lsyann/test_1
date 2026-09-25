@@ -9,7 +9,7 @@ from .pydantic_classes import (MinimalSource,
 
 
 def clean(text: str) -> list[str]:
-    cleaner = "".join(c if c.isalnum() or c == '_' else " " for c in text)
+    cleaner = "".join(c if c.isalnum() else " " for c in text)
     return cleaner.lower().split()
 
 
@@ -20,6 +20,7 @@ def get_text(doc: MinimalSource) -> str:
             file += line
 
     chunk = " ".join(doc.file_path.split("/")) + "\n"
+    chunk += chunk + chunk
     chunk += file[doc.first_character_index:doc.last_character_index + 1]
     return chunk
 
