@@ -17,6 +17,7 @@ evaluate-code:
 clean:
 	rm -rf data/output
 	rm -rf data/processed
+	rm -rf src/__pycache__
 
 lint:
 	flake8 src
