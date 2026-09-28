@@ -30,10 +30,15 @@ def search_dataset(dataset_path: str, k: int, save_directory: str) -> None:
         q = RagDataset.model_validate(json.load(f)).rag_questions
 
     retrieved_sources = get_sources(q, k, True)
+    total = sum(1 for temp_source in retrieved_sources.search_results for source in temp_source.retrieved_sources)
+    is_code = sum(1 for temp_source in retrieved_sources.search_results for source in temp_source.retrieved_sources if source.file_path.endswith(".py"))
 
     if not save_directory.endswith("/"):
         save_directory += "/"
-    save_directory += "StudentSearchResults"
+    if is_code > total / 2:
+        save_directory += "code_search_results"
+    else:
+        save_directory += "docs_search_results"
     os.makedirs(os.path.dirname(save_directory), exist_ok=True)
     with open(save_directory, "w") as f:
         json.dump(retrieved_sources.model_dump(), f)
