@@ -1,30 +1,0 @@
-searching dataset:   0%|          | 0/100 [00:00<?, ?it/s]searching dataset:   1%|          | 1/100 [00:00<00:46,  2.12it/s]searching dataset:   2%|▏         | 2/100 [00:00<00:43,  2.25it/s]searching dataset:   3%|▎         | 3/100 [00:01<00:41,  2.35it/s]searching dataset:   4%|▍         | 4/100 [00:01<00:42,  2.28it/s]searching dataset:   5%|▌         | 5/100 [00:02<00:47,  2.01it/s]searching dataset:   6%|▌         | 6/100 [00:02<00:39,  2.38it/s]searching dataset:   7%|▋         | 7/100 [00:03<00:42,  2.21it/s]searching dataset:   8%|▊         | 8/100 [00:03<00:39,  2.32it/s]searching dataset:   9%|▉         | 9/100 [00:04<00:42,  2.15it/s]searching dataset:  10%|█         | 10/100 [00:04<00:46,  1.96it/s]searching dataset:  11%|█         | 11/100 [00:05<00:42,  2.11it/s]searching dataset:  12%|█▏        | 12/100 [00:05<00:46,  1.89it/s]searching dataset:  13%|█▎        | 13/100 [00:06<00:51,  1.69it/s]searching dataset:  14%|█▍        | 14/100 [00:07<00:50,  1.70it/s]searching dataset:  15%|█▌        | 15/100 [00:07<00:54,  1.57it/s]searching dataset:  15%|█▌        | 15/100 [00:07<00:44,  1.90it/s]
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/itsme/rag/src/__main__.py", line 123, in <module>
-    fire.Fire()
-  File "/home/itsme/rag/.venv/lib/python3.12/site-packages/fire/core.py", line 135, in Fire
-    component_trace = _Fire(component, args, parsed_flag_args, context, name)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/itsme/rag/.venv/lib/python3.12/site-packages/fire/core.py", line 468, in _Fire
-    component, remaining_args = _CallAndUpdateTrace(
-                                ^^^^^^^^^^^^^^^^^^^^
-  File "/home/itsme/rag/.venv/lib/python3.12/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-    component = fn(*varargs, **kwargs)
-                ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/itsme/rag/src/__main__.py", line 32, in search_dataset
-    retrieved_sources = get_sources(q, k, True)
-                        ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/itsme/rag/src/retrieval.py", line 99, in get_sources
-    return multiple_prompts(
-           ^^^^^^^^^^^^^^^^^
-  File "/home/itsme/rag/src/retrieval.py", line 79, in multiple_prompts
-    retrieved_sources=unique_prompt(
-                      ^^^^^^^^^^^^^^
-  File "/home/itsme/rag/src/retrieval.py", line 55, in unique_prompt
-    _get_score(word, score, data_text, avg_len)
-  File "/home/itsme/rag/src/retrieval.py", line 44, in _get_score
-    scores[i] += IDF * freq[i] / temp
-    ~~~~~~^^^
-KeyboardInterrupt

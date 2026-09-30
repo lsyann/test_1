@@ -1,5 +1,7 @@
 import os
 import json
+from typing import Any
+from .retrieval import get_text, clean
 from .pydantic_classes import MinimalSource
 
 
@@ -87,14 +89,20 @@ def _chunk_files(path: str, max_length: int) -> list[list[MinimalSource]]:
 
 def write_chunks(max_chunk_size: int) -> None:
     chunked_files = _chunk_files("data/raw", max_chunk_size)
+    text: list[dict[str, Any]] = []
     lst = []
     for file in chunked_files:
         for chunk in file:
+            text.append({"text": clean(get_text(chunk))})
             lst.append(chunk.model_dump())
+    for elem in text:
+        elem["len"] = len(elem["text"])
 
     os.makedirs(os.path.dirname("data/processed/"), exist_ok=True)
     with open("data/processed/processed", "w") as f:
         json.dump(lst, f)
+    with open("data/processed/text", "w") as f:
+        json.dump(text, f)
     print("Successfully chunked the corpus under data/processed/processed")
 
 

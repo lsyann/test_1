@@ -89,11 +89,9 @@ def get_sources(
 
     with open("data/processed/processed", "r") as f:
         data = [MinimalSource.model_validate(elem) for elem in json.load(f)]
+    with open("data/processed/text", "r") as f:
+        data_text = json.load(f)
 
-    data_text: list[dict[str, Any]] = [
-            {"text": clean(get_text(elem))} for elem in data]
-    for i in range(len(data)):
-        data_text[i]["len"] = len(data_text[i]["text"])
     avg_len = sum(d["len"] for d in data_text) / len(data)
     if multiple:
         return multiple_prompts(

@@ -1,4 +1,4 @@
-from .retrieval import get_text, get_sources
+from .retrieval import get_text, get_sources, clean
 from .chunker import write_chunks
 from .llm_model import get_answer, Small_LLM_Model
 from .pydantic_classes import (MinimalSearchResults,
