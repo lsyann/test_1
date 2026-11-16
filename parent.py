@@ -17,6 +17,14 @@ class Sandbox:
                                       stdout=subprocess.PIPE,
                                       stdin=subprocess.PIPE,
                                       text=True)
+    
+    def reset_child(self):
+        try:
+            self.child.kill()
+            self.child.wait()
+            self.raise_child()
+        except Exception as err:
+            print(err)
 
 
     def run(self, code: str) -> str:
@@ -25,25 +33,30 @@ class Sandbox:
             self.raise_child()
         try:
             self.child.stdin.write(code)
+            self.child.stdin.write("\nend of this chunkEOC\n")
             self.child.stdin.flush()
             timeout = select.poll()
             timeout.register(self.child.stdout)
             if len(timeout.poll(1000 * int(self.timeout))) == 0:
-                self.child.kill()
-                self.child.wait()
+                self.reset_child()
                 return "process timeout"
             output = ""
+            dead = 1
             for line in self.child.stdout:
                 if line == "end of this chunkEOC\n":
+                    dead = 0
                     break
                 output += line
+            if dead:
+                return "problem with child, the child was reset"
             if self.child.poll() is not None:
-                signal = self.child.returncode
+                sig = self.child.returncode
+                self.reset_child()
                 try:
-                    return signal.Signals(-1 * signal)
+                    return signal.Signals(-1 * sig)
                 except Exception as err:
-                    return f"exit code: {signal}\nthe child was reset"
-            if output == "":
+                    return f"exit code: {sig}\nthe child was reset"
+            if output.strip() == "":
                 return "no output"
             return output
         except Exception as err:
