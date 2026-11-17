@@ -28,11 +28,13 @@ def main():
             except Exception as err:
                 print(err)
             except BaseException as err:
-                return
+                raise Exception("BaseException caught")
             print("\nend of this chunkEOC")
             sys.stdout.flush()
         except Exception as err:
             print(err)
+            print("\nend of this chunkEOC")
+            sys.stdout.flush()
             return
 
 

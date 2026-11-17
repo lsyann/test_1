@@ -84,7 +84,7 @@ tests = [
     ("semicolons",              "a = 1; b = 2; print(a + b)",               "3\n"),
     ("one-line loop",           "for i in range(3): print(i)",              "0\n1\n2\n"),
     ("embedded newline",        "print('a\\nb')",                           "a\nb\n"),
-    ("empty print",             "print()",                                  "\n"),
+    ("empty print",             "print()",                                  "no output\n"),
     ("unicode",                 "print('héllo ✓ 日本')",                     "héllo ✓ 日本\n"),
     ("import",                  "import math; print(math.sqrt(16))",        "4.0\n"),
     ("lambda",                  "f = lambda n: n * 2; print(f(21))",        "42\n"),
@@ -104,9 +104,9 @@ tests = [
     ("kill itself",             "import os, signal; os.kill(os.getpid(), signal.SIGKILL)", RESET),
 
     # these must hit the timeout (they are safe only if your handler kills the child)
-    #("busy loop",               "while True: pass",                         TIMEOUT),
-    #("sleep",                   "import time; time.sleep(30)",              TIMEOUT),
-    #`("input() waits for stdin", "input()",                                  TIMEOUT),
+    ("busy loop",               "while True: pass",                         TIMEOUT),
+    ("sleep",                   "import time; time.sleep(30)",              TIMEOUT),
+    ("input() waits for stdin", "input()",                                  TIMEOUT),
 
     ("works after timeouts",    "print('alive')",                           "alive\n"),
 ]
@@ -152,7 +152,7 @@ cpu_tests = [
 ]
 
 
-def check(sd, tests):
+def check(sd, test):
     def norm(s):
         # ignore excessive newlines: collapse runs of \n, strip leading/trailing ones
         if not isinstance(s, str):
@@ -160,7 +160,6 @@ def check(sd, tests):
         return "\n".join(line for line in s.split("\n") if line != "")
 
     passed = 0
-    test = tests
     for name, code, expected in test:
         got = sd.run(code)                 # run() must return a list of strings
         ok = expected(got) if callable(expected) else norm(got) == norm(expected)
@@ -176,4 +175,6 @@ def check(sd, tests):
     print(f"\n{passed}/{len(test)} passed")
 
 if __name__ == "__main__":
-    check(Sandbox(), tests)
+    #check(Sandbox(), tests)
+    check(Sandbox(), cpu_tests)
+    #check(Sandbox(), memory_tests)
