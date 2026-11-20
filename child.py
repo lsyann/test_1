@@ -26,13 +26,15 @@ def main():
                 code += line
             if code == "":
                 return
+            output= {"status": "ok"}
+            out = io.StringIO()
             try:
-                output= {"status": "ok"}
-                out = io.StringIO()
                 with contextlib.redirect_stdout(out):
                     exec(code, env)
             except Exception as err:
-                output["error"] = "".join(traceback.format_exception(err))
+                temp = traceback.format_exception(err)
+                nb = [nb for nb, elem in enumerate(temp) if "<string>" in elem][0]
+                output["error"] = "".join(temp[nb:])
                 output["status"] = "error"
             except BaseException as err:
                 raise Exception("BaseException caught")
