@@ -3,6 +3,7 @@ import resource
 import traceback
 import contextlib
 import io
+import json
 
 
 def block_mischief(event,arg):
@@ -26,7 +27,7 @@ def main():
             if code == "":
                 return
             try:
-                output= {"status": ok}
+                output= {"status": "ok"}
                 out = io.StringIO()
                 with contextlib.redirect_stdout(out):
                     exec(code, env)
@@ -36,13 +37,13 @@ def main():
             except BaseException as err:
                 raise Exception("BaseException caught")
             output["output"] = out.getvalue()
-            print(output)
-            print("\nend of this chunkEOC")
+            print(json.dumps(output), "\nend of this chunkEOC")
             sys.stdout.flush()
     except Exception as err:
         output["error"] = "".join(traceback.format_exception(err))
         output["status"] = "error"
-        print("\nend of this chunkEOC")
+        output["output"] = out.getvalue()
+        print(json.dumps(output), "\nend of this chunkEOC")
         sys.stdout.flush()
 
 
