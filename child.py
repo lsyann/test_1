@@ -2,6 +2,7 @@ import sys
 import resource
 import traceback
 import contextlib
+import io
 
 
 def block_mischief(event,arg):
@@ -16,7 +17,7 @@ def main():
         sys.addaudithook(block_mischief)
         resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
         resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
-       while True:
+        while True:
             code = ""
             for line in sys.stdin:
                 if line == "end of this chunkEOC\n":
@@ -24,23 +25,23 @@ def main():
                 code += line
             if code == "":
                 return
-            output: dict[str, str]
             try:
+                output= {"status": ok}
                 out = io.StringIO()
                 with contextlib.redirect_stdout(out):
                     exec(code, env)
             except Exception as err:
-                #output["error"] = "".join(traceback.format_exception(err))
-                ...
+                output["error"] = "".join(traceback.format_exception(err))
+                output["status"] = "error"
             except BaseException as err:
                 raise Exception("BaseException caught")
-            #output["output"] = out.getvalue()
-            #print(output)
-            print(out.getvalue())
+            output["output"] = out.getvalue()
+            print(output)
             print("\nend of this chunkEOC")
             sys.stdout.flush()
-    except Exception as err:`:
-        print(err)
+    except Exception as err:
+        output["error"] = "".join(traceback.format_exception(err))
+        output["status"] = "error"
         print("\nend of this chunkEOC")
         sys.stdout.flush()
 
