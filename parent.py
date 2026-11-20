@@ -176,5 +176,7 @@ def check(sd, test):
 
 if __name__ == "__main__":
     #check(Sandbox(), tests)
-    check(Sandbox(), cpu_tests)
+    #check(Sandbox(), cpu_tests)
     #check(Sandbox(), memory_tests)
+    #print(Sandbox().run("raise ZeroDivisionError"))
+    print(Sandbox().run("print('asdf')"))

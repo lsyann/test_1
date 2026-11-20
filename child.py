@@ -1,5 +1,7 @@
 import sys
 import resource
+import traceback
+import contextlib
 
 
 def block_mischief(event,arg):
@@ -10,12 +12,11 @@ def block_mischief(event,arg):
 def main():
     argv = [int(elem) for elem in sys.argv[1:]]
     env = {}
-    sys.addaudithook(block_mischief)
-    resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
-    resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
-
-    while True:
-        try:
+    try:
+        sys.addaudithook(block_mischief)
+        resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
+        resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
+       while True:
             code = ""
             for line in sys.stdin:
                 if line == "end of this chunkEOC\n":
@@ -23,19 +24,25 @@ def main():
                 code += line
             if code == "":
                 return
+            output: dict[str, str]
             try:
-                exec(code, env)
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    exec(code, env)
             except Exception as err:
-                print(err)
+                #output["error"] = "".join(traceback.format_exception(err))
+                ...
             except BaseException as err:
                 raise Exception("BaseException caught")
+            #output["output"] = out.getvalue()
+            #print(output)
+            print(out.getvalue())
             print("\nend of this chunkEOC")
             sys.stdout.flush()
-        except Exception as err:
-            print(err)
-            print("\nend of this chunkEOC")
-            sys.stdout.flush()
-            return
+    except Exception as err:`:
+        print(err)
+        print("\nend of this chunkEOC")
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
