@@ -11,6 +11,16 @@ def block_mischief(event,arg):
         raise IOError('file write forbidden')
 
 
+def error(err, out, output, status):
+    temp = traceback.format_exception(err)
+    nb = [nb for nb, elem in enumerate(temp) if "<string>" in elem][0]
+    output["error"] = "".join(temp[nb:])
+    output["status"] = status
+    output["error_type"] = type(err).__name__
+    output["error_message"] = str(err)
+    return output
+
+
 def main():
     argv = [int(elem) for elem in sys.argv[1:]]
     env = {}
@@ -32,18 +42,14 @@ def main():
                 with contextlib.redirect_stdout(out):
                     exec(code, env)
             except Exception as err:
-                temp = traceback.format_exception(err)
-                nb = [nb for nb, elem in enumerate(temp) if "<string>" in elem][0]
-                output["error"] = "".join(temp[nb:])
-                output["status"] = "error"
+                output = error(err, out, output, "error")
             except BaseException as err:
                 raise Exception("BaseException caught")
             output["output"] = out.getvalue()
             print(json.dumps(output), "\nend of this chunkEOC")
             sys.stdout.flush()
     except Exception as err:
-        output["error"] = "".join(traceback.format_exception(err))
-        output["status"] = "error"
+        output = error(err, out, output, "dead")
         output["output"] = out.getvalue()
         print(json.dumps(output), "\nend of this chunkEOC")
         sys.stdout.flush()

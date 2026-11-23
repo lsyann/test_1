@@ -1,7 +1,7 @@
 import subprocess
 import select
 import signal
-
+import json
 
 class Sandbox:
     def __init__(self):
@@ -49,16 +49,15 @@ class Sandbox:
                 output += line
             if dead:
                 return "problem with child, the child was reset"
-            if self.child.poll() is not None:
+            child = json.loads(output)
+            if child["status"] == "dead":
                 sig = self.child.returncode
                 self.reset_child()
                 try:
                     return signal.Signals(-1 * sig)
                 except Exception as err:
                     return f"exit code: {sig}\nthe child was reset"
-            if output.strip() == "":
-                return "no output"
-            return output
+            return child
         except Exception as err:
             return f"problem with sandbox: {err}"
 
@@ -178,5 +177,9 @@ if __name__ == "__main__":
     #check(Sandbox(), tests)
     #check(Sandbox(), cpu_tests)
     #check(Sandbox(), memory_tests)
-    #print(Sandbox().run("raise ZeroDivisionError"))
+    print(Sandbox().run("raise ZeroDivisionError"))
     print(Sandbox().run("print('asdf')"))
+    print(Sandbox().run("a = 'a' * 10**9"))
+    print(Sandbox().run("print(a)"))
+    print(Sandbox().run("print('asdf')"))
+    print(Sandbox().run("pass"))
