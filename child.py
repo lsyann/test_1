@@ -21,6 +21,23 @@ def error(err, out, output, status):
     return output
 
 
+class output_redirect:
+    def __init__(self):
+        self.text = ""
+        self.limit = 5000
+        self.len = 0
+        self.truncated = False
+
+    def write(self, text):
+        self.len += len(text)
+        if not self.truncated and self.len > self.limit:
+            self.truncated = True
+        i = 0
+        while len(self.text) < self.limit and i < len(text):
+            self.text += text[i]
+            i += 1
+
+
 def main():
     argv = [int(elem) for elem in sys.argv[1:]]
     env = {}
@@ -37,7 +54,7 @@ def main():
             if code == "":
                 return
             output= {"status": "ok"}
-            out = io.StringIO()
+            out = output_redirect()
             try:
                 with contextlib.redirect_stdout(out):
                     exec(code, env)
@@ -45,7 +62,7 @@ def main():
                 output = error(err, out, output, "error")
             except BaseException as err:
                 raise Exception("BaseException caught")
-            output["output"] = out.getvalue()
+            output["output"] = out.text
             print(json.dumps(output), "\nend of this chunkEOC")
             sys.stdout.flush()
     except Exception as err:

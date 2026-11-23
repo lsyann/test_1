@@ -41,23 +41,10 @@ class Sandbox:
                 self.reset_child()
                 return "process timeout"
             output = ""
-            dead = 1
             for line in self.child.stdout:
                 if line == "end of this chunkEOC\n":
-                    dead = 0
-                    break
+                    return output
                 output += line
-            if dead:
-                return "problem with child, the child was reset"
-            child = json.loads(output)
-            if child["status"] == "dead":
-                sig = self.child.returncode
-                self.reset_child()
-                try:
-                    return signal.Signals(-1 * sig)
-                except Exception as err:
-                    return f"exit code: {sig}\nthe child was reset"
-            return child
         except Exception as err:
             return f"problem with sandbox: {err}"
 
@@ -174,12 +161,13 @@ def check(sd, test):
     print(f"\n{passed}/{len(test)} passed")
 
 if __name__ == "__main__":
-    #check(Sandbox(), tests)
-    #check(Sandbox(), cpu_tests)
-    #check(Sandbox(), memory_tests)
+    # check(Sandbox(), tests)
+    # check(Sandbox(), cpu_tests)
+    # check(Sandbox(), memory_tests)
     print(Sandbox().run("raise ZeroDivisionError"))
-    print(Sandbox().run("print('asdf')"))
-    print(Sandbox().run("a = 'a' * 10**9"))
+    print(Sandbox().run("print('testidk')"))
     print(Sandbox().run("print(a)"))
+    print(Sandbox().run("a = 'a' * 10**9"))
+    print(Sandbox().run("for i in range(10000):\n    print('asdf' * 1000)"))
     print(Sandbox().run("print('asdf')"))
     print(Sandbox().run("pass"))
