@@ -38,7 +38,7 @@ class output_redirect:
             i += 1
 
 
-def main():
+def child():
     argv = [int(elem) for elem in sys.argv[1:]]
     env = {}
     try:
@@ -63,6 +63,8 @@ def main():
             except BaseException as err:
                 raise Exception("BaseException caught")
             output["output"] = out.text
+            if out.truncated:
+                output["additional info"] = f"the output was truncated, original length was {out.len}"
             print(json.dumps(output), "\nend of this chunkEOC")
             sys.stdout.flush()
     except Exception as err:
@@ -73,4 +75,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    child()
