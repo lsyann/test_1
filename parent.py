@@ -32,19 +32,16 @@ class Sandbox:
         if self.child is None or self.child.poll() is not None:
             self.raise_child()
         try:
-            self.child.stdin.write(code)
-            self.child.stdin.write("\nend of this chunkEOC\n")
+            temp = json.dumps({"code":code})
+            print(temp)
+            self.child.stdin.write(temp)
             self.child.stdin.flush()
             timeout = select.poll()
             timeout.register(self.child.stdout)
             if len(timeout.poll(1000 * int(self.timeout))) == 0:
                 self.reset_child()
                 return "process timeout"
-            output = ""
-            for line in self.child.stdout:
-                if line == "end of this chunkEOC\n":
-                    return output
-                output += line
+            return self.child.stdout.readline()
         except Exception as err:
             return f"problem with sandbox: {err}"
 
