@@ -28,13 +28,10 @@ class Sandbox:
 
 
     def run(self, code: str) -> str:
-        code += "\n"
         if self.child is None or self.child.poll() is not None:
             self.raise_child()
         try:
-            temp = json.dumps({"code":code})
-            print(temp)
-            self.child.stdin.write(temp)
+            self.child.stdin.write(json.dumps({"code":code}) + "\n")
             self.child.stdin.flush()
             timeout = select.poll()
             timeout.register(self.child.stdout)

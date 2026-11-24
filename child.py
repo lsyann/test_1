@@ -63,7 +63,6 @@ def child():
         resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
         while True:
             code = json.loads(sys.stdin.readline())["code"]
-            print(code);return;
             if code == "":
                 return
             output= {"status": "ok"}
@@ -78,13 +77,11 @@ def child():
             output["output"] = out.get_text()
             if out.truncated:
                 output["additional info"] = f"the output was truncated, original length was {out.len}"
-            print(json.dumps(output))
-            sys.stdout.flush()
+            print(json.dumps(output), flush=True)
     except Exception as err:
         output = error(err, out, output, "dead")
         output["output"] = out.get_text()
-        print(json.dumps(output))
-        sys.stdout.flush()
+        print(json.dumps(output), flush=True)
 
 
 if __name__ == "__main__":
