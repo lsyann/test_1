@@ -6,7 +6,7 @@ import json
 class Sandbox:
     def __init__(self):
         self.child: subprocess.Popen = None
-        self.timeout = "2"
+        self.timeout = "20"
         self.max_memory = "512"
 
     def raise_child(self):
@@ -164,10 +164,12 @@ if __name__ == "__main__":
     # check(Sandbox(), tests)
     # check(Sandbox(), cpu_tests)
     # check(Sandbox(), memory_tests)
-    print(Sandbox().run("raise ZeroDivisionError"))
-    print(Sandbox().run("print('testidk')"))
-    print(Sandbox().run("print(a)"))
-    print(Sandbox().run("a = 'a' * 10**9"))
-    print(Sandbox().run("for i in range(10000):\n    print('asdf' * 1000)"))
-    print(Sandbox().run("print('asdf')"))
-    print(Sandbox().run("pass"))
+    sd = Sandbox()
+    print(sd.run("raise ZeroDivisionError"))
+    print(sd.run("print('testidk')"))
+    print(sd.run("print(a)"))
+    print(sd.run("a = 'a' * 10**9"))
+    print(sd.run("for i in range(10000):\n    print('asdf' * 1000);print('alive')"))
+    print(sd.run("print('asdf')"))
+    print(sd.run("pass"))
+    print(sd.run("exit()"))
