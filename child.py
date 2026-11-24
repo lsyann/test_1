@@ -37,20 +37,19 @@ class output_redirect(io.TextIOBase):
         while len(self.text) < self.limit and i < len(text):
             self.text += text[i]
             i += 1
-        if len(self.text) >= self.limit:
+        if self.len >= self.limit and len(text.strip()) > 0:
             self.save = ""
             if len(text) > self.limit / 2:
-                for i in range(-round(self.limit / 2) + 1, 0):
-                    self.save += text[i]
+                self.save = text[len(text) - round(self.limit / 2):]
             else:
                 self.save = text
         return len(text)
 
     def get_text(self):
-        if self.save == "":
+        if len(self.save.strip()) == 0:
             return self.text
-        self.text = self.text[len(self.text) - len(self.save) - 25]
-        self.text += "... string was truncated"
+        self.text = self.text[:len(self.text) - len(self.save) - 25]
+        self.text += "... string was truncated\n"
         self.text += self.save
         return self.text
 
@@ -79,14 +78,14 @@ def child():
                 output = error(err, out, output, "error")
             except BaseException as err:
                 raise Exception("BaseException caught")
-            output["output"] = out.get_text
+            output["output"] = out.get_text()
             if out.truncated:
                 output["additional info"] = f"the output was truncated, original length was {out.len}"
             print(json.dumps(output), "\nend of this chunkEOC")
             sys.stdout.flush()
     except Exception as err:
         output = error(err, out, output, "dead")
-        output["output"] = out.get_text
+        output["output"] = out.get_text()
         print(json.dumps(output), "\nend of this chunkEOC")
         sys.stdout.flush()
 
