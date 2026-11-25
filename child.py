@@ -12,9 +12,17 @@ def block_mischief(event,arg):
 
 
 def error(err, out, output, status):
-    temp = traceback.format_exception(err)
-    nb = [nb for nb, elem in enumerate(temp) if "<string>" in elem][0]
-    output["error"] = "".join(temp[nb:])
+    frames = traceback.format_exception(err)
+    nb = [nb for nb, elem in enumerate(frames) if "<string>" in elem]
+    if len(nb) != 0:
+        nb = nb[0]
+        if len(frames) - nb - 6 > 0:
+            frames = frames[len(frames) - 6:]
+        else:
+            frames = frames[nb:]
+        output["error"] = "".join(frames)
+    else:
+        output["error"] = "idk"
     output["status"] = status
     output["error_type"] = type(err).__name__
     output["error_message"] = str(err)
@@ -62,9 +70,10 @@ def child():
         resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
         resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
         while True:
-            code = json.loads(sys.stdin.readline())["code"]
-            if code == "":
-                return
+            line = sys.stdin.readline()
+            if not line:
+                exit()
+            code = json.loads(line)["code"]
             output= {"status": "ok"}
             out = output_redirect()
             try:
