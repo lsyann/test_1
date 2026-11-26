@@ -14,21 +14,20 @@ def block_mischief(event,arg):
 def error(err, out, output, status):
     frames = traceback.format_exception(err)
     nb = [nb for nb, elem in enumerate(frames) if "<string>" in elem]
+    temp1 = frames[-1]
+    if len(temp1) > 1000:
+        temp1 = temp1[len(temp1) - 1000:] + "[following ouput omitted]"
     if len(nb) != 0:
-        nb = nb[0]
-        if len(frames) - nb - 6 > 0:
-            frames = frames[len(frames) - 6:]
-        else:
-            frames = frames[nb:]
-        output["error"] = "".join(frames)
+        temp = "".join(frames[nb[0]:-1])
+        if len(temp) > 2000:
+            temp = "[earlier output omitted]" + temp[len(temp) - 2000:]
+        output["error"] = temp + temp1
     else:
-        output["error"] = "no error message"
+        output["error"] = temp1
     output["status"] = status
     output["error_type"] = type(err).__name__
-    error_message = str(err)
-    if len(error_message) > 3000:
-        error_message = error_message[len(error_message) - 3000:]
-    output["error_message"] = error_message
+    if len(str(err).strip()) != 0:
+        output["error_message"] = str(err)
     return output
 
 
