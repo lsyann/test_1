@@ -10,7 +10,6 @@ class Sandbox:
         self.max_memory = "512"
 
     def raise_child(self):
-        print("new child")
         self.child = subprocess.Popen(["python3", "child.py",
                                        self.timeout,
                                        self.max_memory],
@@ -22,7 +21,7 @@ class Sandbox:
         try:
             self.child.kill()
             self.child.wait()
-            self.raise_child()
+            self.child = None
         except Exception as err:
             print(err)
 
@@ -39,11 +38,12 @@ class Sandbox:
                 self.reset_child()
                 return "process timeout"
             line = self.child.stdout.readline()
-            if line == "" or self.child.poll() is not None:
+            if line == "":
+                self.child.wait()
                 sig = self.child.returncode
                 self.reset_child()
                 try:
-                    return signal.Signals(-sig)
+                    return signal.Signals(-sig).name
                 except Exception as err:
                     return f"exit code: {sig}, the child was reset"
             try:
@@ -61,32 +61,7 @@ RESET = "problem with child, the child was reset"
 TIMEOUT = "process timeout"
 
 
-def check(sd, test):
-    def norm(s):
-        # ignore excessive newlines: collapse runs of \n, strip leading/trailing ones
-        if not isinstance(s, str):
-            return s
-        return "\n".join(line for line in s.split("\n") if line != "")
-
-    passed = 0
-    for name, code, expected in test:
-        got = sd.run(code)                 # run() must return a list of strings
-        ok = expected(got) if callable(expected) else norm(got) == norm(expected)
-        if ok:
-            passed += 1
-            print(f"PASS  {name}")
-        else:
-            print(f"FAIL  {name}")
-            print(f"      code:     {code!r}")
-            print(f"      expected: {norm(expected)!r}" if not callable(expected)
-                  else f"      expected: {expected.__name__}(output) to be True")
-            print(f"      got:      {norm(got)!r}")
-    print(f"\n{passed}/{len(test)} passed")
-
 if __name__ == "__main__":
-    # check(Sandbox(), tests)
-    # check(Sandbox(), cpu_tests)
-    # check(Sandbox(), memory_tests)
     sd = Sandbox()
     print(sd.run("raise ZeroDivisionError"))
     print(sd.run("print('testidk')"))
@@ -98,3 +73,4 @@ if __name__ == "__main__":
     print(sd.run("exit()"))
     print(sd.run("x = 1/x00"))
     print(sd.run("raise KeyboardInterrupt"))
+    print(sd.run("import os\nos._exit"))
