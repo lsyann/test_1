@@ -16,18 +16,20 @@ def error(err, out, output, status):
     nb = [nb for nb, elem in enumerate(frames) if "<string>" in elem]
     temp1 = frames[-1]
     if len(temp1) > 1000:
-        temp1 = temp1[len(temp1) - 1000:] + "[following ouput omitted]"
+        temp1 = temp1[:-1000] + "[following output omitted]"
     if len(nb) != 0:
         temp = "".join(frames[nb[0]:-1])
         if len(temp) > 2000:
-            temp = "[earlier output omitted]" + temp[len(temp) - 2000:]
+            temp = "[earlier output omitted]" + temp[-2000:]
         output["error"] = temp + temp1
     else:
         output["error"] = temp1
     output["status"] = status
     output["error_type"] = type(err).__name__
-    if len(str(err).strip()) != 0:
-        output["error_message"] = str(err)
+    error_message = str(err)
+    if len(error_message) > 2000:
+        error_message = error_message[-2000:]
+    output["error_message"] = error_message
     return output
 
 
