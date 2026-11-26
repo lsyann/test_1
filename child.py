@@ -22,10 +22,13 @@ def error(err, out, output, status):
             frames = frames[nb:]
         output["error"] = "".join(frames)
     else:
-        output["error"] = "idk"
+        output["error"] = "no error message"
     output["status"] = status
     output["error_type"] = type(err).__name__
-    output["error_message"] = str(err)
+    error_message = str(err)
+    if len(error_message) > 3000:
+        error_message = error_message[len(error_message) - 3000:]
+    output["error_message"] = error_message
     return output
 
 
@@ -82,7 +85,10 @@ def child():
             except Exception as err:
                 output = error(err, out, output, "error")
             except BaseException as err:
-                raise Exception("BaseException caught")
+                output = error(err, out, output, "dead")
+                output["output"] = out.get_text()
+                print(json.dumps(output), flush=True)
+                return
             output["output"] = out.get_text()
             if out.truncated:
                 output["additional info"] = f"the output was truncated, original length was {out.len}"
