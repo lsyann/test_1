@@ -74,3 +74,4 @@ if __name__ == "__main__":
     print(sd.run("x = 1/x00"))
     print(sd.run("raise KeyboardInterrupt"))
     print(sd.run("import os\nos._exit"))
+    print(sd.run("for _ in range(3):\n    print(123)"))

@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import builtins
+import ast
 
 
 
@@ -50,8 +51,24 @@ def allowlist(allowed_imports):
     return allowed
 
 
-def block_mischief(event,arg):
-    if event=='open' or event.split('.')[0] in ['subprocess', 'os', 'shutil', 'winreg']:
+class ForbiddenCode(Exception):
+    pass
+
+
+def check_code(code):
+    tree = ast.parse(code)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute):
+            name = node.attr
+        elif isinstance(node, ast.Name):
+            name = node.id
+        else:
+            continue
+        if name.startswith("_"):
+            raise ForbiddenCode(f"line {node.lineno}: access to '{name}' is not allowed")
+
+def block_mischief(event, arg):
+    if event=='open':
         raise IOError('file write forbidden')
 
 
@@ -112,12 +129,13 @@ class output_redirect(io.TextIOBase):
 
 def child():
     argv = [int(elem) for elem in sys.argv[1:]]
-    env = {"__builtins__": allowlist(ALLOWED_IMPORTS), "__name__": "sandbox"}
+    env = {"__name__": "sandbox"}
     try:
         sys.addaudithook(block_mischief)
         resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
         resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
         while True:
+            env["__builtins__"] = allowlist(ALLOWED_IMPORTS)
             line = sys.stdin.readline()
             if not line:
                 exit()
@@ -125,6 +143,7 @@ def child():
             output= {"status": "ok"}
             out = output_redirect()
             try:
+                check_code(code)
                 with contextlib.redirect_stdout(out):
                     exec(code, env)
             except Exception as err:
