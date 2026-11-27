@@ -4,6 +4,50 @@ import traceback
 import contextlib
 import io
 import json
+import builtins
+
+
+
+ALLOWED_IMPORTS = ["math", "cmath", "decimal", "itertools", "operator", "bisect",
+                   "heapq", "string", "textwrap", "re", "functools", "datetime",
+                   "copy", "array", "collections.*"]
+
+SAFE_NAMES = ["abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes",
+              "callable", "chr", "classmethod", "complex", "dict", "divmod",
+              "enumerate", "filter", "float", "format", "frozenset", "hasattr",
+              "hash", "hex", "int", "isinstance", "issubclass", "iter", "len",
+              "list", "map", "max", "min", "next", "object", "oct", "ord", "pow",
+              "print", "property", "range", "repr", "reversed", "round", "set",
+              "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple",
+              "type", "zip", "NotImplemented", "Ellipsis", "__build_class__"]
+
+
+def is_allowed(name, allowed):
+    if name in allowed:
+        return True
+    for elem in allowed:
+        if elem.endswith(".*"):
+            base = elem[:-2]
+            if name == base or name.startswith(base + "."):
+                return True
+    return False
+
+
+def allowlist(allowed_imports):
+    real_import = builtins.__import__
+
+    def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if level != 0 or not is_allowed(name, allowed_imports):
+            raise ImportError(f"import of '{name}' is not allowed: {allowed_imports}")
+        return real_import(name, globals, locals, fromlist, level)
+
+    allowed = {elem: getattr(builtins, elem) for elem in SAFE_NAMES}
+    for elem in builtins.__dict__:
+        obj = getattr(builtins, elem)
+        if isinstance(obj, type) and issubclass(obj, BaseException):
+            allowed[elem] = obj
+    allowed["__import__"] = safe_import
+    return allowed
 
 
 def block_mischief(event,arg):
@@ -68,7 +112,7 @@ class output_redirect(io.TextIOBase):
 
 def child():
     argv = [int(elem) for elem in sys.argv[1:]]
-    env = {}
+    env = {"__builtins__": allowlist(ALLOWED_IMPORTS), "__name__": "sandbox"}
     try:
         sys.addaudithook(block_mischief)
         resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
