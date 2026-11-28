@@ -80,7 +80,11 @@ def check_code(code):
 
 def block_mischief(event, arg):
     if event=='open':
-        print(arg)
+        path = os.path.realpath(arg[0])
+        for elem in allowed_dir:
+            if os.path.commonpath([path, elem]) == elem:
+                return open(path, arg[1])
+        raise PermissionError(f"{arg[0]} is in a forbidden directory. Allowed dictories: {allowed_dir}")
 
 
 def error(err, out, output, status):
