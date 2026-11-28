@@ -6,6 +6,7 @@ import io
 import json
 import builtins
 import ast
+import os
 
 
 
@@ -22,6 +23,13 @@ SAFE_NAMES = ["abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes",
               "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple",
               "type", "zip", "NotImplemented", "Ellipsis", "__build_class__"]
 
+allowed_directories = ["/etc"]
+def safe_open(file, mode):
+    path = os.path.realpath(file)
+    for elem in allowed_directories:
+        if path.startswith(elem):
+            return open(file, mode)
+    raise PermissionError(f"{file} is in a forbidden directory. Allowed dictories: {allowed_directories}")
 
 def is_allowed(name, allowed):
     if name in allowed:
@@ -48,6 +56,7 @@ def allowlist(allowed_imports):
         if isinstance(obj, type) and issubclass(obj, BaseException):
             allowed[elem] = obj
     allowed["__import__"] = safe_import
+    allowed["open"] = safe_open
     return allowed
 
 
@@ -69,7 +78,7 @@ def check_code(code):
 
 def block_mischief(event, arg):
     if event=='open':
-        raise IOError('file write forbidden')
+        print(arg)
 
 
 def error(err, out, output, status):
@@ -131,7 +140,7 @@ def child():
     argv = [int(elem) for elem in sys.argv[1:]]
     env = {"__name__": "sandbox"}
     try:
-        sys.addaudithook(block_mischief)
+        #sys.addaudithook(block_mischief)
         resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
         resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
         while True:
