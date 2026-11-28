@@ -23,13 +23,15 @@ SAFE_NAMES = ["abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes",
               "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple",
               "type", "zip", "NotImplemented", "Ellipsis", "__build_class__"]
 
-allowed_directories = ["/etc"]
-def safe_open(file, mode):
+allowed_dir = []
+def safe_open(file, mode='r'):
+    if type(file) is not str:
+        raise TypeError(f"In the sandbox, open takes only string file names: {file}")
     path = os.path.realpath(file)
-    for elem in allowed_directories:
-        if path.startswith(elem):
-            return open(file, mode)
-    raise PermissionError(f"{file} is in a forbidden directory. Allowed dictories: {allowed_directories}")
+    for elem in allowed_dir:
+        if os.path.commonpath([path, elem]) == elem:
+            return open(path, mode)
+    raise PermissionError(f"{file} is in a forbidden directory. Allowed dictories: {allowed_dir}")
 
 def is_allowed(name, allowed):
     if name in allowed:
@@ -140,7 +142,7 @@ def child():
     argv = [int(elem) for elem in sys.argv[1:]]
     env = {"__name__": "sandbox"}
     try:
-        #sys.addaudithook(block_mischief)
+        sys.addaudithook(block_mischief)
         resource.setrlimit(resource.RLIMIT_CPU, (argv[0] * 4, argv[0] * 4 + 10))
         resource.setrlimit(resource.RLIMIT_AS, (argv[1] * 1024 * 1024, argv[1] * 1024 * 1024))
         while True:
